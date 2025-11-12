@@ -1,6 +1,6 @@
 
 #include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/include/interface/MCAL/RCC/rcc.h"
-#include "../../../include/private/MCAL/rcc_priv.h"
+#include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/include/private/MCAL/rcc_priv.h"
 
 STD_ReturnType RCC_cfgClk(const RCC_CFG_t *cfg){
     STD_ReturnType ret = STD_SUCCESS;
@@ -11,28 +11,58 @@ STD_ReturnType RCC_cfgClk(const RCC_CFG_t *cfg){
         if(cfg->sysClkSource == RCC_CLOCK_SOURCE_HSI || cfg->sysClkSource == RCC_CLOCK_SOURCE_HSE){
             ret = RCC_setClk(cfg->sysClkSource, RCC_ENABLE);
             if(ret == STD_SUCCESS){
-                ret = RCC_waitForClkReady(cfg->sysClkSource, 1000000);
+                ret = RCC_waitForClkReady(cfg->sysClkSource, 500);
+            }
+            else{
+                // Do nothing
             }
             if(ret == STD_SUCCESS){
                 ret = RCC_setSysClk(cfg->sysClkSource);
             }
+            else{
+                // Do nothing
+            }
             if(ret == STD_SUCCESS){
-                ret = RCC_waitForSysClkReady(cfg->sysClkSource, 1000000);
+                ret = RCC_waitForSysClkReady(cfg->sysClkSource, 500);
+            }
+            else{
+                // Do nothing
             }
         }
         else if(cfg->sysClkSource == RCC_CLOCK_SOURCE_PLL){
             ret = RCC_setClk(cfg->pllClkSource, RCC_ENABLE);
             if(ret == STD_SUCCESS){
-                ret = RCC_waitForClkReady(cfg->pllClkSource, 1000000);
+                ret = RCC_waitForClkReady(cfg->pllClkSource, 500);
+            }
+            else{
+                // Do nothing
+            }
+            // set system clock to pll clock source
+            if(ret == STD_SUCCESS){
+                ret = RCC_setSysClk(cfg->pllClkSource);
+            }
+            else{
+                // Do nothing
+            }
+            if(ret == STD_SUCCESS){
+                ret = RCC_waitForSysClkReady(cfg->pllClkSource, 500);
+            }
+            else{
+                // Do nothing
             }
             // Disable the PLL before configuring
             if(ret == STD_SUCCESS){
                 ret = RCC_setClk(RCC_CLOCK_SOURCE_PLL, RCC_DISABLE);
             }
+            else{
+                // Do nothing
+            }
             // Configure PLL
-            
             if(ret == STD_SUCCESS){
                 ret = RCC_setPLLClockSource(cfg->pllClkSource);
+            }
+            else{
+                // Do nothing
             }
             // C. Set Flash Latency (CRITICAL STEP for 84 MHz)
             *(uint32_t*)((0x40000000UL + 0x00020000UL) + 0x3C00UL) &= ~0b111;
@@ -41,19 +71,53 @@ STD_ReturnType RCC_cfgClk(const RCC_CFG_t *cfg){
             if(ret == STD_SUCCESS){
                 ret = RCC_pllCfg(&(cfg->pllConfig));
             }
+            else{
+                // Do nothing
+            }
             // Enable PLL
             if(ret == STD_SUCCESS){
                 ret = RCC_setClk(RCC_CLOCK_SOURCE_PLL, RCC_ENABLE);
             }
+            else{
+                // Do nothing
+            }
             if(ret == STD_SUCCESS){
-                ret = RCC_waitForClkReady(RCC_CLOCK_SOURCE_PLL, 1000000);
+                ret = RCC_waitForClkReady(RCC_CLOCK_SOURCE_PLL, 500);
+            }
+            else{
+                // Do nothing
+            }
+            // Set AHB & APB Prescalers
+            if(ret == STD_SUCCESS){
+                ret = RCC_setAHBPrescaler(RCC_AHB_PRESCALER_DIV1);
+            }
+            else{
+                // Do nothing
+            }
+            if(ret == STD_SUCCESS){
+                ret = RCC_setAPBPrescaler(RCC_APB_PRESCALER_DIV2, RCC_APB1);
+            }
+            else{
+                // Do nothing
+            }
+            if(ret == STD_SUCCESS){
+                ret = RCC_setAPBPrescaler(RCC_APB_PRESCALER_DIV1, RCC_APB2);
+            }
+            else{
+                // Do nothing
             }
             // Set System Clock to PLL
             if(ret == STD_SUCCESS){
-                ret = RCC_setSysClk(cfg->sysClkSource);  //// STUCK HERE "but the register value is set successfully"
+                ret = RCC_setSysClk(cfg->sysClkSource);
+            }
+            else{
+                // Do nothing
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_waitForSysClkReady(cfg->sysClkSource, 1000000);
+                ret = RCC_waitForSysClkReady(cfg->sysClkSource, 500);
+            }
+            else{
+                // Do nothing
             }
         }
         else {
@@ -93,6 +157,9 @@ STD_ReturnType RCC_waitForSysClkReady(RCC_ClockType_t clockType, uint32_t timeou
             if(timeout == tickStart){
                 ret = STD_TIMEOUT;
             }
+            else{
+                // Do nothing
+            }
             break;
         case RCC_CLOCK_SOURCE_HSE:
             while ((RCC->CFGR.BITS.SWS != 0b01) && (tickStart < timeout)){
@@ -100,6 +167,9 @@ STD_ReturnType RCC_waitForSysClkReady(RCC_ClockType_t clockType, uint32_t timeou
             }
             if(timeout == tickStart){
                 ret = STD_TIMEOUT;
+            }
+            else{
+                // Do nothing
             }
             break;
         case RCC_CLOCK_SOURCE_PLL:
@@ -109,6 +179,9 @@ STD_ReturnType RCC_waitForSysClkReady(RCC_ClockType_t clockType, uint32_t timeou
             if(timeout == tickStart){
                 ret = STD_TIMEOUT;
             }
+            else{
+                // Do nothing
+            }
             break;
         default:
             ret = STD_ERROR;
@@ -117,29 +190,17 @@ STD_ReturnType RCC_waitForSysClkReady(RCC_ClockType_t clockType, uint32_t timeou
     return ret;
 }
 
-STD_ReturnType RCC_setClk(RCC_ClockType_t clockType, RCC_Clock_Status_t enDis){
+STD_ReturnType RCC_setClk(RCC_ClockType_t clockType, RCC_Clock_Status_t status){
     STD_ReturnType ret = STD_SUCCESS;
     switch (clockType){
         case RCC_CLOCK_SOURCE_HSI:
-            if (enDis == RCC_ENABLE){
-                RCC->CR.BITS.HSION = 1;
-            } else {
-                RCC->CR.BITS.HSION = 0;
-            }
+            RCC->CR.BITS.HSION = status;
             break;
         case RCC_CLOCK_SOURCE_HSE:
-            if (enDis == RCC_ENABLE){
-                RCC->CR.BITS.HSEON = 1;
-            } else {
-                RCC->CR.BITS.HSEON = 0;
-            }
+            RCC->CR.BITS.HSEON = status;
             break;
         case RCC_CLOCK_SOURCE_PLL:
-            if (enDis == RCC_ENABLE){
-                RCC->CR.BITS.PLLON = 1;
-            } else {
-                RCC->CR.BITS.PLLON = 0;
-            }
+            RCC->CR.BITS.PLLON = status;
             break;
         default:
             ret = STD_ERROR;
@@ -160,6 +221,9 @@ STD_ReturnType RCC_waitForClkReady(RCC_ClockType_t clockType, uint32_t timeout){
             if(timeout == tickStart){
                 ret = STD_TIMEOUT;
             }
+            else{
+                // Do nothing
+            }
             break;
         case RCC_CLOCK_SOURCE_HSE:
             while ((RCC->CR.BITS.HSERDY == 0) && (tickStart < timeout)){
@@ -168,6 +232,9 @@ STD_ReturnType RCC_waitForClkReady(RCC_ClockType_t clockType, uint32_t timeout){
             if(timeout == tickStart){
                 ret = STD_TIMEOUT;
             }
+            else{
+                // Do nothing
+            }
             break;
         case RCC_CLOCK_SOURCE_PLL:
             while ((RCC->CR.BITS.PLLRDY == 0) && (tickStart < timeout)){
@@ -175,6 +242,9 @@ STD_ReturnType RCC_waitForClkReady(RCC_ClockType_t clockType, uint32_t timeout){
             }
             if(timeout == tickStart){
                 ret = STD_TIMEOUT;
+            }
+            else{
+                // Do nothing
             }
             break;
         default:
@@ -218,6 +288,9 @@ STD_ReturnType RCC_pllCfg(const PLL_CFG_t *pllCfg){
             if (ret == STD_SUCCESS) {
                 RCC->PLLCFGR.BITS.PLLQ = pllCfg->pll_cfg_custom_t.PLLQ;
             }
+            else{
+                // Do nothing
+            }
         }
     }
     
@@ -249,7 +322,8 @@ STD_ReturnType RCC_checkPLLClockSource(RCC_ClockType_t *source){
     else{
         if (RCC->PLLCFGR.BITS.PLLSRC == 0){
             *source = RCC_CLOCK_SOURCE_HSI;
-        } else {
+        }
+        else {
             *source = RCC_CLOCK_SOURCE_HSE;
         }
     }
@@ -265,17 +339,17 @@ STD_ReturnType RCC_setPLLMaxClock(void){
     if(ret == STD_SUCCESS){
         if(currentSource == RCC_CLOCK_SOURCE_HSI){
             // Set the PLL to maximum clock settings for HSI (HSI=16MHz)
-            RCC->PLLCFGR.BITS.PLLM = 8; // 16/8 = 2MHz
+            RCC->PLLCFGR.BITS.PLLM = 8;  // 16/8 = 2MHz
             RCC->PLLCFGR.BITS.PLLN = 168;// 2*168 = 336MHz
-            RCC->PLLCFGR.BITS.PLLP = 1; // 336/4 = 84MHz
-            RCC->PLLCFGR.BITS.PLLQ = 7; // 336/7 = 48MHz
-        }
-        else {
-            // Set the PLL to maximum clock settings for HSE (HSE=24MHz)
-            RCC->PLLCFGR.BITS.PLLM = 12; // 24/12 = 2MHz
-            RCC->PLLCFGR.BITS.PLLN = 168; // 2*168 = 336MHz
             RCC->PLLCFGR.BITS.PLLP = 1;  // 336/4 = 84MHz
             RCC->PLLCFGR.BITS.PLLQ = 7;  // 336/7 = 48MHz
+        }
+        else {
+            // Set the PLL to maximum clock settings for HSE (HSE=25MHz)
+            RCC->PLLCFGR.BITS.PLLM = 25;  // 25/25 = 1 MHz
+            RCC->PLLCFGR.BITS.PLLN = 336; // 1 * 336 = 336 MHz
+            RCC->PLLCFGR.BITS.PLLP = 1;   // /4 = 84 MHz (00 -> /2, 01 -> /4)
+            RCC->PLLCFGR.BITS.PLLQ = 7;   // /7 = 48 MHz (USB)
         }
     }
     else {
@@ -286,67 +360,63 @@ STD_ReturnType RCC_setPLLMaxClock(void){
 }
 
 //////////// Peripherals Configurations (Enable/Disable/Reset) //////////////  
-/*  
-STD_ReturnType RCC_enableClkPeripheral(uint32_t peripheral, RCC_BusType_t bus){
+static STD_ReturnType RCC_waitPeripheralReady(RCC_Peripheral_t peripheral, uint32_t timeout){
     STD_ReturnType ret = STD_SUCCESS;
-    switch (bus) {
-        case RCC_AHB1:
-            RCC->AHB1ENR.REG |= peripheral;
+    uint32_t tickStart = 0;
+    uint32_t busID = (peripheral & RCC_BUS_MASK) >> RCC_BUS_OFFSET;  // 1/2/3/4
+    
+    switch (busID) {
+        case RCC_AHB1: 
+            while(((RCC->AHB1ENR.REG & peripheral) == 0) && tickStart < timeout){
+                tickStart++;
+            }
+            if(timeout == tickStart){
+                ret = STD_TIMEOUT;
+            }
+            else{
+                // Do nothing
+            }
             break;
-        case RCC_APB1:
-            RCC->APB1ENR.REG |= peripheral;
+        case RCC_AHB2: 
+            while(((RCC->AHB2ENR.REG & peripheral) == 0) && tickStart < timeout){
+                tickStart++;
+            }
+            if(timeout == tickStart){
+                ret = STD_TIMEOUT;
+            }
+            else{
+                // Do nothing
+            }
             break;
-        case RCC_APB2:
-            RCC->APB2ENR.REG |= peripheral;
+        case RCC_APB1: 
+            while(((RCC->APB1ENR.REG & peripheral) == 0) && tickStart < timeout){
+                tickStart++;
+            }
+            if(timeout == tickStart){
+                ret = STD_TIMEOUT;
+            }
+            else{
+                // Do nothing
+            }
+            break;
+        case RCC_APB2: 
+            while(((RCC->APB2ENR.REG & peripheral) == 0) && tickStart < timeout){
+                tickStart++;
+            }
+            if(timeout == tickStart){
+                ret = STD_TIMEOUT;
+            }
+            else{
+                // Do nothing
+            }
             break;
         default:
             ret = STD_ERROR;
             break;
-    }
-    return ret;
-}
+    }    
 
-STD_ReturnType RCC_disableClkPeripheral(uint32_t peripheral, RCC_BusType_t bus){
-    STD_ReturnType ret = STD_SUCCESS;
-    switch (bus) {
-        case RCC_AHB1:
-            RCC->AHB1ENR.REG &= ~peripheral;
-            break;
-        case RCC_APB1:
-            RCC->APB1ENR.REG &= ~peripheral;
-            break;
-        case RCC_APB2:
-            RCC->APB2ENR.REG &= ~peripheral;
-            break;
-        default:
-            ret = STD_ERROR;
-            break;
-    }
     return ret;
 }
-
-STD_ReturnType RCC_resetPeripheral(uint32_t peripheral, RCC_BusType_t bus){
-    STD_ReturnType ret = STD_SUCCESS;
-    switch (bus) {
-        case RCC_AHB1:
-            RCC->AHB1RSTR.REG |= peripheral;
-            RCC->AHB1RSTR.REG &= ~peripheral;
-            break;
-        case RCC_APB1:
-            RCC->APB1RSTR.REG |= peripheral;
-            RCC->APB1RSTR.REG &= ~peripheral;
-            break;
-        case RCC_APB2:
-            RCC->APB2RSTR.REG |= peripheral;
-            RCC->APB2RSTR.REG &= ~peripheral;
-            break;
-        default:
-            ret = STD_ERROR;
-            break;
-    }
-    return ret;
-}
-*/
 
 // Can send multpile parameters only for the same bus: RCC_GPIOA | RCC_GPIOC
 STD_ReturnType RCC_ctrlPeripheral(RCC_Peripheral_t peripheral, RCC_Peripheral_Operation_t operation){
@@ -372,6 +442,12 @@ STD_ReturnType RCC_ctrlPeripheral(RCC_Peripheral_t peripheral, RCC_Peripheral_Op
                     ret = STD_ERROR;
                     break;
             }
+            if(ret == STD_SUCCESS){
+                ret = RCC_waitPeripheralReady(peripheral, 50);
+            }
+            else{
+                // Do nothing
+            }
             break;
         case RCC_PERIPHERAL_DISABLE:
             switch (busID) {
@@ -390,6 +466,12 @@ STD_ReturnType RCC_ctrlPeripheral(RCC_Peripheral_t peripheral, RCC_Peripheral_Op
                 default:
                     ret = STD_ERROR;
                     break;
+            }
+            if(ret == STD_SUCCESS){
+                ret = RCC_waitPeripheralReady(peripheral, 50);
+            }
+            else{
+                // Do nothing
             }
             break;
         case RCC_PERIPHERAL_RESET:
@@ -414,11 +496,18 @@ STD_ReturnType RCC_ctrlPeripheral(RCC_Peripheral_t peripheral, RCC_Peripheral_Op
                     ret = STD_ERROR;
                     break;
             }
+            if(ret == STD_SUCCESS){
+                ret = RCC_waitPeripheralReady(peripheral, 50);
+            }
+            else{
+                // Do nothing
+            }
             break;
         default:
             ret = STD_ERROR;
             break;
-    }
+    }    
+
     return ret;
 }
 

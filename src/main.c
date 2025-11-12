@@ -1,6 +1,6 @@
 #include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/include/interface/MCAL/RCC/rcc.h"
+#include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/lib/BIT_Math.h"
 #include "stm32f401xc.h"
-#include "../lib/BIT_Math.h"
 
 RCC_CFG_t rcc_cfg = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,

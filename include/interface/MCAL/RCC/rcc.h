@@ -2,6 +2,13 @@
 
 #define RCC_PLL_MAX       0xFF
 
+/*
+Notes:
+- MASK input parameters for checking if correct params is sent
+- make peripheral parameters uint64_t to make bus ID at 32,33,34,35 bits and rest 0-31 bits for peripheral ID
+
+*/
+
 typedef enum {
     RCC_DISABLE = 0,
     RCC_ENABLE
@@ -43,51 +50,6 @@ typedef struct {
     RCC_ClockType_t pllClkSource;
     PLL_CFG_t pllConfig;
 } RCC_CFG_t;
-
-/*
-typedef enum {
-    RCC_CLK_GPIOA   = (1U << 0),  // Bit 0: GPIOA
-    RCC_CLK_GPIOB   = (1U << 1),  // Bit 1: GPIOB
-    RCC_CLK_GPIOC   = (1U << 2),  // Bit 2: GPIOC
-    RCC_CLK_GPIOD   = (1U << 3),  // Bit 3: GPIOD
-    RCC_CLK_GPIOE   = (1U << 4),  // Bit 4: GPIOE
-    RCC_CLK_GPIOH   = (1U << 7),  // Bit 7: GPIOH
-
-    RCC_CLK_CRC     = (1U << 12), // Bit 12: CRC
-    RCC_CLK_DMA1    = (1U << 21), // Bit 21: DMA1
-    RCC_CLK_DMA2    = (1U << 22), // Bit 22: DMA2
-    RCC_CLK_OTGFS   = (1U << 25), // Bit 25: USB OTG FS (AHB1)    
-} RCC_AHB1_CLK_Peripheral_t;
-
-typedef enum {
-    RCC_CLK_TIM2    = (1U << 0),  // Bit 0: TIM2
-    RCC_CLK_TIM3    = (1U << 1),  // Bit 1: TIM3
-    RCC_CLK_TIM4    = (1U << 2),  // Bit 2: TIM4
-    RCC_CLK_TIM5    = (1U << 3),  // Bit 3: TIM5
-    RCC_CLK_WWDG    = (1U << 11), // Bit 11: Window Watchdog
-    RCC_CLK_SPI2    = (1U << 14), // Bit 14: SPI2
-    RCC_CLK_SPI3    = (1U << 15), // Bit 15: SPI3
-    RCC_CLK_USART2  = (1U << 17), // Bit 17: USART2
-    RCC_CLK_I2C1    = (1U << 21), // Bit 21: I2C1
-    RCC_CLK_I2C2    = (1U << 22), // Bit 22: I2C2
-    RCC_CLK_I2C3    = (1U << 23), // Bit 23: I2C3
-    RCC_CLK_PWR     = (1U << 28), // Bit 28: Power interface
-} RCC_APB1_Peripheral_t;
-
-typedef enum {
-    RCC_CLK_TIM1    = (1U << 0),  // Bit 0: TIM1
-    RCC_CLK_USART1  = (1U << 4),  // Bit 4: USART1      
-    RCC_CLK_USART6  = (1U << 5),  // Bit 5: USART6
-    RCC_CLK_ADC1    = (1U << 8),  // Bit 8: ADC1
-    RCC_CLK_SDIO    = (1U << 11), // Bit 11: SDIO
-    RCC_CLK_SPI1    = (1U << 12), // Bit 12: SPI1
-    RCC_CLK_SPI4    = (1U << 13), // Bit 13: SPI4
-    RCC_CLK_SYSCFG  = (1U << 14), // Bit 14: System configuration controller
-    RCC_CLK_TIM9    = (1U << 16), // Bit 16: TIM9
-    RCC_CLK_TIM10   = (1U << 17), // Bit 17: TIM10
-    RCC_CLK_TIM11   = (1U << 18), // Bit 18: TIM11
-} RCC_APB2_Peripheral_t;
-*/
 
 #define RCC_BUS_MASK        0xC0000000U 
 #define RCC_BUS_OFFSET      30
@@ -163,28 +125,115 @@ typedef enum {
 } RCC_APB_Prescaler_t;
 
 
+/**
+ * @brief  Configures the system clock according to the provided configuration.
+ * @param  cfg: Pointer to RCC configuration structure (contains system clock source, pll clock source, pll configurations)
+ * @retval STD_SUCCESS if configuration was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_cfgClk(const RCC_CFG_t *cfg);
+
+/**
+ * @brief  Sets the system clock source (HSI, HSE, or PLL).
+ * @param  clockType: The desired system clock source.
+ * @retval STD_SUCCESS if the clock source was set successfully, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_setSysClk(RCC_ClockType_t clockType);
-STD_ReturnType RCC_setClk(RCC_ClockType_t clockType, RCC_Clock_Status_t enDis);
+
+/**
+ * @brief  Enables or disables the specified clock source.
+ * @param  clockType: The clock type to control (HSI, HSE, PLL).
+ * @param  status: Desired operation (RCC_ENABLE or RCC_DISABLE).
+ * @retval STD_SUCCESS if operation was successful, otherwise STD_ERROR.
+ */
+STD_ReturnType RCC_setClk(RCC_ClockType_t clockType, RCC_Clock_Status_t status);
+
+/**
+ * @brief  Waits until the specified clock source becomes ready or a timeout occurs.
+ * @param  clockType: The clock type to check (HSI, HSE, PLL).
+ * @param  timeout: Timeout duration in milliseconds.
+ * @retval STD_SUCCESS if clock becomes ready within timeout, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_waitForClkReady(RCC_ClockType_t clockType, uint32_t timeout);
+
+/**
+ * @brief  Waits until the system clock switch to the specified clock source is completed.
+ * @param  clockType: The system clock source to wait for.
+ * @param  timeout: Timeout duration in milliseconds.
+ * @retval STD_SUCCESS if system clock is ready, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_waitForSysClkReady(RCC_ClockType_t clockType, uint32_t timeout);
 
+/**
+ * @brief  Configures the PLL according to the provided parameters.
+ * @param  pllCfg: Pointer to PLL configuration structure (contains PLLM, PLLN, PLLP, PLLQ, etc.)
+ * @retval STD_SUCCESS if configuration was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_pllCfg(const PLL_CFG_t *pllCfg);
+
+/**
+ * @brief  Selects the input clock source for the PLL.
+ * @param  source: The PLL input source (HSI or HSE).
+ * @retval STD_SUCCESS if source was set successfully, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_setPLLClockSource(RCC_ClockType_t source);
+
+/**
+ * @brief  Reads the currently configured PLL clock source.
+ * @param  source: Pointer to variable to store the current PLL source.
+ * @retval STD_SUCCESS if read operation was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_checkPLLClockSource(RCC_ClockType_t *source);
+
+/**
+ * @brief  Configures the PLL to the maximum supported system clock frequency.
+ * @note   Must be called after enabling the PLL and before switching to it as SYSCLK.
+ * @retval STD_SUCCESS if configuration was applied successfully, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_setPLLMaxClock(void);
-/*
-STD_ReturnType RCC_enableClkPeripheral(uint32_t peripheral, RCC_BusType_t bus);
-STD_ReturnType RCC_disableClkPeripheral(uint32_t peripheral, RCC_BusType_t bus);
-STD_ReturnType RCC_resetPeripheral(uint32_t peripheral, RCC_BusType_t bus);
-*/
+
+/**
+ * @brief  Controls peripheral clock enable/disable/reset for a specific bus.
+ * @param  peripheral: Peripheral identifier (may contain bus information and bitmask).
+ * @param  operation: Operation to perform (RCC_PERIPHERAL_ENABLE, DISABLE, or RESET).
+ * @retval STD_SUCCESS if operation succeeded, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_ctrlPeripheral(RCC_Peripheral_t peripheral, RCC_Peripheral_Operation_t operation);
 
+/**
+ * @brief  Sets the AHB bus prescaler.
+ * @param  prescaler: AHB prescaler value (division factor).
+ * @retval STD_SUCCESS if prescaler was set successfully, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_setAHBPrescaler(RCC_AHB_Prescaler_t prescaler);
+
+/**
+ * @brief  Sets the APB bus prescaler for APB1 or APB2.
+ * @param  prescaler: APB prescaler value (division factor).
+ * @param  bus: Bus selection (RCC_APB1 or RCC_APB2).
+ * @retval STD_SUCCESS if prescaler was set successfully, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_setAPBPrescaler(RCC_APB_Prescaler_t prescaler, RCC_BusType_t bus);
 
-STD_ReturnType RCC_setHSEBypass(void);          // if using External clock source
-STD_ReturnType RCC_clearHSEBypass(void);        // if using External crystal/ceramic resonator
+/**
+ * @brief  Enables HSE bypass mode (used when external clock signal is provided instead of a crystal).
+ * @retval STD_SUCCESS if bypass mode was enabled successfully, otherwise STD_ERROR.
+ */
+STD_ReturnType RCC_setHSEBypass(void);
 
+/**
+ * @brief  Disables HSE bypass mode (used when using an external crystal oscillator).
+ * @retval STD_SUCCESS if bypass mode was disabled successfully, otherwise STD_ERROR.
+ */
+STD_ReturnType RCC_clearHSEBypass(void);
+
+/**
+ * @brief  Enables the Clock Security System (CSS) to detect HSE failure.
+ * @retval STD_SUCCESS if CSS was enabled successfully, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_clockSecurityEnable(void);
+
+/**
+ * @brief  Disables the Clock Security System (CSS).
+ * @retval STD_SUCCESS if CSS was disabled successfully, otherwise STD_ERROR.
+ */
 STD_ReturnType RCC_clockSecurityDisable(void);
