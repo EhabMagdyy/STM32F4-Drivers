@@ -36,50 +36,50 @@ typedef enum {
 } GPIO_Pin_t;
 
 typedef enum {
-    GPIO_MODE_INPUT   = 0x0U,
-    GPIO_MODE_OUTPUT  = 0x1U,
-    GPIO_MODE_AF      = 0x2U,
-    GPIO_MODE_ANALOG  = 0x3U 
+    GPIO_MODE_INPUT = 0x0U,
+    GPIO_MODE_OUTPUT,
+    GPIO_MODE_AF,
+    GPIO_MODE_ANALOG
 } GPIO_Mode_t;
 
 
 typedef enum {
-    GPIO_OUTPUT_PUSHPULL  = 0x0U,
-    GPIO_OUTPUT_OPENDRAIN = 0x1U
+    GPIO_OUTPUT_PUSHPULL = 0x0U,
+    GPIO_OUTPUT_OPENDRAIN
 } GPIO_OutputType_t;
 
 typedef enum {
-    GPIO_SPEED_LOW          = 0x0U,
-    GPIO_SPEED_MEDIUM       = 0x1U,
-    GPIO_SPEED_FAST         = 0x2U,
-    GPIO_SPEED_VERY_FAST    = 0x3U
+    GPIO_SPEED_LOW = 0x0U,
+    GPIO_SPEED_MEDIUM,
+    GPIO_SPEED_HIGH,
+    GPIO_SPEED_VERY_HIGH
 } GPIO_Speed_t;
 
 typedef enum {
-    GPIO_NOPULL   = 0x0U,
-    GPIO_PULLUP   = 0x1U,
-    GPIO_PULLDOWN = 0x2U
+    GPIO_NOPULL = 0x0U,
+    GPIO_PULLUP,
+    GPIO_PULLDOWN
 } GPIO_Pull_t;
 
 typedef enum {
     GPIO_PIN_RESET = 0x0U,
-    GPIO_PIN_SET   = 0x1U
+    GPIO_PIN_SET
 } GPIO_PinState_t;
 
 typedef enum {
     GPIO_AF0_SYSTEM       = 0x0U, // Default AF -> GPIO
-    GPIO_AF1_TIM1_TIM2    = 0x1U,
-    GPIO_AF2_TIM3_TIM4_5  = 0x2U,
-    GPIO_AF3_TIM9_10_11   = 0x3U,
-    GPIO_AF4_I2C1_2_3     = 0x4U,
-    GPIO_AF5_SPI1_2       = 0x5U,
-    GPIO_AF6_SPI3         = 0x6U,
-    GPIO_AF7_USART1_2     = 0x7U,
-    GPIO_AF8_USART6       = 0x8U,
-    GPIO_AF9_I2C2_3       = 0x9U,
-    GPIO_AF10_OTG_FS      = 0xAU,
-    GPIO_AF12_SDIO        = 0xCU,
-    GPIO_AF15_EVENTOUT    = 0xFU
+    GPIO_AF1_TIM1_TIM2,
+    GPIO_AF2_TIM3_TIM4_5,
+    GPIO_AF3_TIM9_10_11,
+    GPIO_AF4_I2C1_2_3,
+    GPIO_AF5_SPI1_2,
+    GPIO_AF6_SPI3,
+    GPIO_AF7_USART1_2,
+    GPIO_AF8_USART6,
+    GPIO_AF9_I2C2_3,
+    GPIO_AF10_OTG_FS,
+    GPIO_AF12_SDIO,  
+    GPIO_AF15_EVENTOUT
 } GPIO_AltFunc_t;
 
 typedef struct{

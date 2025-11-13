@@ -16,6 +16,25 @@ STD_ReturnType RCC_cfgClk(const RCC_CFG_t *cfg){
             else{
                 // Do nothing
             }
+            // Set AHB & APB Prescalers
+            if(ret == STD_SUCCESS){
+                ret = RCC_setAHBPrescaler(RCC_AHB_PRESCALER_DIV1);
+            }
+            else{
+                // Do nothing
+            }
+            if(ret == STD_SUCCESS){
+                ret = RCC_setAPBPrescaler(RCC_APB_PRESCALER_DIV1, RCC_APB1);
+            }
+            else{
+                // Do nothing
+            }
+            if(ret == STD_SUCCESS){
+                ret = RCC_setAPBPrescaler(RCC_APB_PRESCALER_DIV1, RCC_APB2);
+            }
+            else{
+                // Do nothing
+            }
             if(ret == STD_SUCCESS){
                 ret = RCC_setSysClk(cfg->sysClkSource);
             }

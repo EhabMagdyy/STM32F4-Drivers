@@ -4,7 +4,7 @@
 #define GPIO_PORT_MAX 5
 
 // Array of GPIO pointers
-const GPIOx_t* GPIO_PORTS[GPIO_PORT_MAX] = {GPIOA, GPIOB, GPIOC, GPIOD, GPIOE};
+GPIOx_t* GPIO_PORTS[GPIO_PORT_MAX] = {GPIOA, GPIOB, GPIOC, GPIOD, GPIOE};
 
 STD_ReturnType GPIO_Init(GPIO_t* gpio){
     STD_ReturnType ret = STD_SUCCESS;
@@ -13,16 +13,71 @@ STD_ReturnType GPIO_Init(GPIO_t* gpio){
     }
     else{
         // Configure MODER
-        GPIO_SetMode(gpio, gpio->mode);
-        // Configure OTYPER
-        GPIO_SetOutputType(gpio, gpio->outputType);
-        // Configure OSPEEDR
-        GPIO_SetSpeed(gpio, gpio->speed);
+        ret = GPIO_SetMode(gpio, gpio->mode);
+        if(ret == STD_SUCCESS){
+            if(gpio->mode == GPIO_MODE_OUTPUT){
+                // For output mode, set default ODR to low
+                ret = GPIO_WritePin(gpio, GPIO_PIN_RESET);
+                // Configure OTYPER
+                ret |= GPIO_SetOutputType(gpio, gpio->outputType);
+                // Configure OSPEEDR
+                ret |= GPIO_SetSpeed(gpio, gpio->speed);
+            }
+            else{
+                // Nothing
+            }
+        }
+        else{
+            // Nothing
+        }
         // Configure PUPDR
-        GPIO_SetPull(gpio, gpio->pullType);
+        if(ret == STD_SUCCESS){
+            ret = GPIO_SetPull(gpio, gpio->pullType);
+        }
+        else{
+            // Nothing
+        }
         // Configure AFR
-        GPIO_SetAltFunction(gpio, gpio->altFunc);
+        if(ret == STD_SUCCESS && gpio->mode == GPIO_MODE_AF){
+            ret = GPIO_SetAltFunction(gpio, gpio->altFunc);
+        }
+        else{
+            // Nothing
+        }
     }
+    return ret;
+}
+
+STD_ReturnType GPIO_DeInit(GPIO_t* gpio) {
+    STD_ReturnType ret = STD_SUCCESS;
+
+    if (gpio == NULL || gpio->port >= GPIO_PORT_MAX) {
+        return STD_ERROR;
+    }
+
+    GPIOx_t* GPIOx = GPIO_PORTS[gpio->port];
+    uint32_t pin = gpio->pin;
+
+    if (GPIOx == NULL) {
+        return STD_ERROR;
+    }
+    // Reset MODER (set as input mode = 00)
+    GPIOx->MODER.REG &= ~(0x3U << (pin * 2));
+    // Reset OTYPER (push-pull = 0)
+    GPIOx->OTYPER.REG &= ~(1U << pin);
+    // Reset OSPEEDR (low speed = 00)
+    GPIOx->OSPEEDR.REG &= ~(0x3U << (pin * 2));
+    // Reset PUPDR (no pull = 00)
+    GPIOx->PUPDR.REG &= ~(0x3U << (pin * 2));
+    // Reset AFRL/AFRH (AF0 = 0000)
+    if (pin < 8) {
+        GPIOx->AFRL.REG &= ~(0xFU << (pin * 4));
+    } else {
+        GPIOx->AFRH.REG &= ~(0xFU << ((pin - 8) * 4));
+    }
+    // Reset output data (ODR = 0)
+    GPIOx->ODR.REG &= ~(1U << pin);
+
     return ret;
 }
 
@@ -110,11 +165,12 @@ STD_ReturnType GPIO_WritePin(GPIO_t* gpio, GPIO_PinState_t state){
     }
     else{
         GPIOx_t* GPIOx = GPIO_PORTS[gpio->port];
+        uint32_t pinMask = (1U << gpio->pin);
         if(state == GPIO_PIN_SET){
-            GPIOx->BSRR.REG = (1U << gpio->pin);
+            GPIOx->BSRR.REG = pinMask;
         }
         else{
-            GPIOx->BSRR.REG = (1U << (gpio->pin + 16));
+            GPIOx->BSRR.REG = (pinMask << 16);
         }
     }
     return ret;
@@ -127,7 +183,8 @@ STD_ReturnType GPIO_ReadPin(GPIO_t* gpio, GPIO_PinState_t* state){
     }
     else{
         GPIOx_t* GPIOx = GPIO_PORTS[gpio->port];
-        if((GPIOx->IDR.REG & (1U << gpio->pin)) != 0){
+        uint32_t pinMask = (1U << gpio->pin);
+        if((GPIOx->IDR.REG & pinMask) != GPIO_PIN_RESET){
             *state = GPIO_PIN_SET;
         }
         else{
@@ -144,7 +201,13 @@ STD_ReturnType GPIO_TogglePin(GPIO_t* gpio){
     }
     else{
         GPIOx_t* GPIOx = GPIO_PORTS[gpio->port];
-        GPIOx->ODR.REG ^= (1U << gpio->pin);    
+        uint32_t pinMask = (1U << gpio->pin);
+        // Read current pin state from ODR and toggle using BSRR
+        if ((GPIOx->ODR.REG & pinMask) != GPIO_PIN_RESET) {
+            GPIOx->BSRR.REG = (pinMask << 16);   // Reset
+        } else {
+            GPIOx->BSRR.REG = pinMask;           // Set
+        }
     }
     return ret;
 }
