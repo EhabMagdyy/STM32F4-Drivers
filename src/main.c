@@ -3,17 +3,17 @@
 #include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/lib/BIT_Math.h"
 #include "stm32f401xc.h"
 
-RCC_CFG_t rcc_cfg_pll = {
+RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
     .pllClkSource = RCC_CLOCK_SOURCE_HSE,
     .pllConfig.pll_cfg_custom_t = RCC_PLL_MAX
 };
 
-RCC_CFG_t rcc_cfg_hsi = {
+RCC_CFG_t rcc_hsi = {
     .sysClkSource = RCC_CLOCK_SOURCE_HSI,
 };
 
-RCC_CFG_t rcc_cfg_hse = {
+RCC_CFG_t rcc_hse = {
     .sysClkSource = RCC_CLOCK_SOURCE_HSE,
 };
 
@@ -54,14 +54,14 @@ int main(){
         for(volatile uint32_t i = 0; i < 1000000; i++);
         counter++;
         if(counter == 6){
-            ret =   RCC_ConfigureClock(&rcc_cfg_hse);
+            ret =   RCC_ConfigureClock(&rcc_hse);
         }
         else if(counter == 14){
-            ret = RCC_ConfigureClock(&rcc_cfg_pll);
+            ret = RCC_ConfigureClock(&rcc_pll);
         }
         else if(counter == 28){
             counter = 0;
-            ret = RCC_ConfigureClock(&rcc_cfg_hsi);
+            ret = RCC_ConfigureClock(&rcc_hsi);
         }
     }
 
