@@ -6,7 +6,7 @@
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
     .pllClkSource = RCC_CLOCK_SOURCE_HSE,
-    .pllConfig.pll_cfg_custom_t = RCC_PLL_MAX
+    .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
 RCC_CFG_t rcc_hsi = {
