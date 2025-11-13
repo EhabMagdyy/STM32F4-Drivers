@@ -2,83 +2,83 @@
 #include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/include/interface/MCAL/rcc.h"
 #include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/include/private/MCAL/rcc_priv.h"
 
-STD_ReturnType RCC_cfgClk(const RCC_CFG_t *cfg){
+STD_ReturnType RCC_ConfigureClock(const RCC_CFG_t *cfg){
     STD_ReturnType ret = STD_SUCCESS;
     if(cfg == NULL){
         ret = STD_ERROR;
     }
     else{
         if(cfg->sysClkSource == RCC_CLOCK_SOURCE_HSI || cfg->sysClkSource == RCC_CLOCK_SOURCE_HSE){
-            ret = RCC_setClk(cfg->sysClkSource, RCC_ENABLE);
+            ret = RCC_SetClock(cfg->sysClkSource, RCC_ENABLE);
             if(ret == STD_SUCCESS){
-                ret = RCC_waitForClkReady(cfg->sysClkSource, 500);
+                ret = RCC_WaitForClockReady(cfg->sysClkSource, 500);
             }
             else{
                 // Do nothing
             }
             // Set AHB & APB Prescalers
             if(ret == STD_SUCCESS){
-                ret = RCC_setAHBPrescaler(RCC_AHB_PRESCALER_DIV1);
+                ret = RCC_SetAHBPrescaler(RCC_AHB_PRESCALER_DIV1);
             }
             else{
                 // Do nothing
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_setAPBPrescaler(RCC_APB_PRESCALER_DIV1, RCC_APB1);
+                ret = RCC_SetAPBPrescaler(RCC_APB_PRESCALER_DIV1, RCC_APB1);
             }
             else{
                 // Do nothing
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_setAPBPrescaler(RCC_APB_PRESCALER_DIV1, RCC_APB2);
+                ret = RCC_SetAPBPrescaler(RCC_APB_PRESCALER_DIV1, RCC_APB2);
             }
             else{
                 // Do nothing
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_setSysClk(cfg->sysClkSource);
+                ret = RCC_SetSystemClock(cfg->sysClkSource);
             }
             else{
                 // Do nothing
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_waitForSysClkReady(cfg->sysClkSource, 500);
+                ret = RCC_WaitForSysClkReady(cfg->sysClkSource, 500);
             }
             else{
                 // Do nothing
             }
         }
         else if(cfg->sysClkSource == RCC_CLOCK_SOURCE_PLL){
-            ret = RCC_setClk(cfg->pllClkSource, RCC_ENABLE);
+            ret = RCC_SetClock(cfg->pllClkSource, RCC_ENABLE);
             if(ret == STD_SUCCESS){
-                ret = RCC_waitForClkReady(cfg->pllClkSource, 500);
+                ret = RCC_WaitForClockReady(cfg->pllClkSource, 500);
             }
             else{
                 // Do nothing
             }
             // set system clock to pll clock source
             if(ret == STD_SUCCESS){
-                ret = RCC_setSysClk(cfg->pllClkSource);
+                ret = RCC_SetSystemClock(cfg->pllClkSource);
             }
             else{
                 // Do nothing
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_waitForSysClkReady(cfg->pllClkSource, 500);
+                ret = RCC_WaitForSysClkReady(cfg->pllClkSource, 500);
             }
             else{
                 // Do nothing
             }
             // Disable the PLL before configuring
             if(ret == STD_SUCCESS){
-                ret = RCC_setClk(RCC_CLOCK_SOURCE_PLL, RCC_DISABLE);
+                ret = RCC_SetClock(RCC_CLOCK_SOURCE_PLL, RCC_DISABLE);
             }
             else{
                 // Do nothing
             }
             // Configure PLL
             if(ret == STD_SUCCESS){
-                ret = RCC_setPLLClockSource(cfg->pllClkSource);
+                ret = RCC_SetPLLClockSource(cfg->pllClkSource);
             }
             else{
                 // Do nothing
@@ -88,52 +88,52 @@ STD_ReturnType RCC_cfgClk(const RCC_CFG_t *cfg){
             *(uint32_t*)((0x40000000UL + 0x00020000UL) + 0x3C00UL) |= (2 & 0b111);
 
             if(ret == STD_SUCCESS){
-                ret = RCC_pllCfg(&(cfg->pllConfig));
+                ret = RCC_ConfigurePLL(&(cfg->pllConfig));
             }
             else{
                 // Do nothing
             }
             // Enable PLL
             if(ret == STD_SUCCESS){
-                ret = RCC_setClk(RCC_CLOCK_SOURCE_PLL, RCC_ENABLE);
+                ret = RCC_SetClock(RCC_CLOCK_SOURCE_PLL, RCC_ENABLE);
             }
             else{
                 // Do nothing
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_waitForClkReady(RCC_CLOCK_SOURCE_PLL, 500);
+                ret = RCC_WaitForClockReady(RCC_CLOCK_SOURCE_PLL, 500);
             }
             else{
                 // Do nothing
             }
             // Set AHB & APB Prescalers
             if(ret == STD_SUCCESS){
-                ret = RCC_setAHBPrescaler(RCC_AHB_PRESCALER_DIV1);
+                ret = RCC_SetAHBPrescaler(RCC_AHB_PRESCALER_DIV1);
             }
             else{
                 // Do nothing
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_setAPBPrescaler(RCC_APB_PRESCALER_DIV2, RCC_APB1);
+                ret = RCC_SetAPBPrescaler(RCC_APB_PRESCALER_DIV2, RCC_APB1);
             }
             else{
                 // Do nothing
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_setAPBPrescaler(RCC_APB_PRESCALER_DIV1, RCC_APB2);
+                ret = RCC_SetAPBPrescaler(RCC_APB_PRESCALER_DIV1, RCC_APB2);
             }
             else{
                 // Do nothing
             }
             // Set System Clock to PLL
             if(ret == STD_SUCCESS){
-                ret = RCC_setSysClk(cfg->sysClkSource);
+                ret = RCC_SetSystemClock(cfg->sysClkSource);
             }
             else{
                 // Do nothing
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_waitForSysClkReady(cfg->sysClkSource, 500);
+                ret = RCC_WaitForSysClkReady(cfg->sysClkSource, 500);
             }
             else{
                 // Do nothing
@@ -146,7 +146,7 @@ STD_ReturnType RCC_cfgClk(const RCC_CFG_t *cfg){
     return ret;
 }
 
-STD_ReturnType RCC_setSysClk(RCC_ClockType_t clockType){
+STD_ReturnType RCC_SetSystemClock(RCC_ClockType_t clockType){
     STD_ReturnType ret = STD_SUCCESS;
     switch (clockType){
         case RCC_CLOCK_SOURCE_HSI:
@@ -165,7 +165,7 @@ STD_ReturnType RCC_setSysClk(RCC_ClockType_t clockType){
     return ret;
 }
 
-STD_ReturnType RCC_waitForSysClkReady(RCC_ClockType_t clockType, uint32_t timeout){
+STD_ReturnType RCC_WaitForSysClkReady(RCC_ClockType_t clockType, uint32_t timeout){
     uint32_t tickStart = 0;
     STD_ReturnType ret = STD_SUCCESS;
     switch (clockType){
@@ -209,7 +209,7 @@ STD_ReturnType RCC_waitForSysClkReady(RCC_ClockType_t clockType, uint32_t timeou
     return ret;
 }
 
-STD_ReturnType RCC_setClk(RCC_ClockType_t clockType, RCC_Clock_Status_t status){
+STD_ReturnType RCC_SetClock(RCC_ClockType_t clockType, RCC_Status_t status){
     STD_ReturnType ret = STD_SUCCESS;
     switch (clockType){
         case RCC_CLOCK_SOURCE_HSI:
@@ -229,7 +229,7 @@ STD_ReturnType RCC_setClk(RCC_ClockType_t clockType, RCC_Clock_Status_t status){
 }
 
 
-STD_ReturnType RCC_waitForClkReady(RCC_ClockType_t clockType, uint32_t timeout){
+STD_ReturnType RCC_WaitForClockReady(RCC_ClockType_t clockType, uint32_t timeout){
     uint32_t tickStart = 0;
     STD_ReturnType ret = STD_SUCCESS;
     switch (clockType){
@@ -274,7 +274,7 @@ STD_ReturnType RCC_waitForClkReady(RCC_ClockType_t clockType, uint32_t timeout){
 }
 
 ////////////////////// PLL Configurations /////////////////////    
-STD_ReturnType RCC_pllCfg(const PLL_CFG_t *pllCfg){
+STD_ReturnType RCC_ConfigurePLL(const PLL_CFG_t *pllCfg){
     STD_ReturnType ret = STD_SUCCESS;
     
     if (pllCfg == NULL) {
@@ -282,7 +282,7 @@ STD_ReturnType RCC_pllCfg(const PLL_CFG_t *pllCfg){
     }
     else {
         if (pllCfg->pll_cfg_max_t.pllMax == RCC_PLL_MAX) {
-            ret = RCC_setPLLMaxClock();
+            ret = RCC_SetPLLMaxClock();
         }
         else {
             RCC->PLLCFGR.BITS.PLLM = pllCfg->pll_cfg_custom_t.PLLM;
@@ -316,7 +316,7 @@ STD_ReturnType RCC_pllCfg(const PLL_CFG_t *pllCfg){
     return ret;
 }
 
-STD_ReturnType RCC_setPLLClockSource(RCC_ClockType_t source){
+STD_ReturnType RCC_SetPLLClockSource(RCC_ClockType_t source){
     STD_ReturnType ret = STD_SUCCESS;
     switch (source){
         case RCC_CLOCK_SOURCE_HSI:
@@ -332,7 +332,7 @@ STD_ReturnType RCC_setPLLClockSource(RCC_ClockType_t source){
     return ret;
 }
 
-STD_ReturnType RCC_checkPLLClockSource(RCC_ClockType_t *source){
+STD_ReturnType RCC_CheckPLLClockSource(RCC_ClockType_t *source){
     STD_ReturnType ret = STD_SUCCESS;
     if(source == NULL){
         ret = STD_ERROR;
@@ -350,11 +350,11 @@ STD_ReturnType RCC_checkPLLClockSource(RCC_ClockType_t *source){
     return ret;
 }
 
-STD_ReturnType RCC_setPLLMaxClock(void){
+STD_ReturnType RCC_SetPLLMaxClock(void){
     STD_ReturnType ret = STD_SUCCESS;
     // Get the current PLL clock source HSI/HSE
     RCC_ClockType_t currentSource = RCC_CLOCK_SOURCE_HSI;
-    ret = RCC_checkPLLClockSource(&currentSource);
+    ret = RCC_CheckPLLClockSource(&currentSource);
     if(ret == STD_SUCCESS){
         if(currentSource == RCC_CLOCK_SOURCE_HSI){
             // Set the PLL to maximum clock settings for HSI (HSI=16MHz)
@@ -379,7 +379,7 @@ STD_ReturnType RCC_setPLLMaxClock(void){
 }
 
 //////////// Peripherals Configurations (Enable/Disable/Reset) //////////////  
-static STD_ReturnType RCC_waitPeripheralReady(RCC_Peripheral_t peripheral, uint32_t timeout){
+static STD_ReturnType RCC_WaitPeripheralReady(RCC_Peripheral_t peripheral, uint32_t timeout){
     STD_ReturnType ret = STD_SUCCESS;
     uint32_t tickStart = 0;
     uint32_t busID = (peripheral & RCC_BUS_MASK) >> RCC_BUS_OFFSET;  // 1/2/3/4
@@ -438,7 +438,7 @@ static STD_ReturnType RCC_waitPeripheralReady(RCC_Peripheral_t peripheral, uint3
 }
 
 // Can send multpile parameters only for the same bus: RCC_GPIOA | RCC_GPIOC
-STD_ReturnType RCC_ctrlPeripheral(RCC_Peripheral_t peripheral, RCC_Peripheral_Operation_t operation){
+STD_ReturnType RCC_ControlPeripheral(RCC_Peripheral_t peripheral, RCC_Peripheral_Operation_t operation){
     STD_ReturnType ret = STD_SUCCESS;
     uint32_t busID = (peripheral & RCC_BUS_MASK) >> RCC_BUS_OFFSET;  // 1/2/3/4
     
@@ -462,7 +462,7 @@ STD_ReturnType RCC_ctrlPeripheral(RCC_Peripheral_t peripheral, RCC_Peripheral_Op
                     break;
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_waitPeripheralReady(peripheral, 50);
+                ret = RCC_WaitPeripheralReady(peripheral, 50);
             }
             else{
                 // Do nothing
@@ -487,7 +487,7 @@ STD_ReturnType RCC_ctrlPeripheral(RCC_Peripheral_t peripheral, RCC_Peripheral_Op
                     break;
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_waitPeripheralReady(peripheral, 50);
+                ret = RCC_WaitPeripheralReady(peripheral, 50);
             }
             else{
                 // Do nothing
@@ -516,7 +516,7 @@ STD_ReturnType RCC_ctrlPeripheral(RCC_Peripheral_t peripheral, RCC_Peripheral_Op
                     break;
             }
             if(ret == STD_SUCCESS){
-                ret = RCC_waitPeripheralReady(peripheral, 50);
+                ret = RCC_WaitPeripheralReady(peripheral, 50);
             }
             else{
                 // Do nothing
@@ -531,12 +531,12 @@ STD_ReturnType RCC_ctrlPeripheral(RCC_Peripheral_t peripheral, RCC_Peripheral_Op
 }
 
 ////////////////////////// Bus Prescalers ///////////////////////////
-STD_ReturnType RCC_setAHBPrescaler(RCC_AHB_Prescaler_t prescaler){
+STD_ReturnType RCC_SetAHBPrescaler(RCC_AHB_Prescaler_t prescaler){
     STD_ReturnType ret = STD_SUCCESS;
     RCC->CFGR.BITS.HPRE = prescaler;
     return ret;
 }
-STD_ReturnType RCC_setAPBPrescaler(RCC_APB_Prescaler_t prescaler, RCC_BusType_t bus){
+STD_ReturnType RCC_SetAPBPrescaler(RCC_APB_Prescaler_t prescaler, RCC_BusType_t bus){
     STD_ReturnType ret = STD_SUCCESS;
     switch (bus){
         case RCC_APB1:
@@ -553,24 +553,15 @@ STD_ReturnType RCC_setAPBPrescaler(RCC_APB_Prescaler_t prescaler, RCC_BusType_t 
 }
 
 /////////////////// HSE Bypass ///////////////////////////
-STD_ReturnType RCC_setHSEBypass(void){
+STD_ReturnType RCC_SetHSEBypass(RCC_Status_t status){
     STD_ReturnType ret = STD_SUCCESS;
-    RCC->CR.BITS.HSEBYP = 1;
+    RCC->CR.BITS.HSEBYP = status;
     return ret;
 }
-STD_ReturnType RCC_clearHSEBypass(void){
-    STD_ReturnType ret = STD_SUCCESS;
-    RCC->CR.BITS.HSEBYP = 0;
-    return ret;
-}
+
 /////////////////// Clock Security System ///////////////////
-STD_ReturnType RCC_clockSecurityEnable(void){
+STD_ReturnType RCC_SetClockSecurity(RCC_Status_t status){
     STD_ReturnType ret = STD_SUCCESS;
-    RCC->CR.BITS.CSSON = 1;
-    return ret;
-}
-STD_ReturnType RCC_clockSecurityDisable(void){
-    STD_ReturnType ret = STD_SUCCESS;
-    RCC->CR.BITS.CSSON = 0;
+    RCC->CR.BITS.CSSON = status;
     return ret;
 }

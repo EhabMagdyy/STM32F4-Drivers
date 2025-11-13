@@ -440,9 +440,9 @@ typedef struct {
         } BITS;
     } DCKCFGR;
 
-} RCCx_t;
+} RCC_t;
 
 // RCC base pointer definition
-#define RCC   ((RCCx_t *) RCC_BASE_ADDRESS)
+#define RCC   ((RCC_t *) RCC_BASE_ADDRESS)
 
 #endif // RCC_PRIV_H
