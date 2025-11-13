@@ -110,7 +110,7 @@ typedef struct {
             volatile uint32_t Reserved3   : 8;
             volatile uint32_t DMA1RST     : 1;
             volatile uint32_t DMA2RST     : 1;
-            volatile uint32_t Reserved4   : 8;
+            volatile uint32_t Reserved4   : 9;
         } BITS;
     } AHB1RSTR;
 
@@ -425,12 +425,9 @@ typedef struct {
     } PLLI2SCFGR;
 
     // Offset 0x88: Reserved (For PLLSAICFGR on other F4's, but not present on F401)
-    volatile uint32_t RESERVED7[2];
+    volatile uint32_t RESERVED7;
 
     // Offset 0x8C: RCC Dedicated Clocks Configuration Register (RCC_DCKCFGR)
-    volatile uint32_t RESERVED8[2];
-
-    // The F401 manual only lists this, but its fields are for PLLI2S division
     union {
         volatile uint32_t REG;
         struct {
