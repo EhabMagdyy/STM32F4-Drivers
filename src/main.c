@@ -1,7 +1,8 @@
-#include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/include/interface/MCAL/rcc.h"
-#include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/include/interface/MCAL/gpio.h"
+#include "interface/MCAL/rcc.h"
+#include "interface/MCAL/gpio.h"
 #include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/lib/BIT_Math.h"
 #include "stm32f401xc.h"
+#include "interface/HAL/led.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -42,15 +43,30 @@ int main(){
 
     ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
 
-    ret = GPIO_Init(&led_A0);
-    ret = GPIO_Init(&led_C13);
+    //ret = GPIO_Init(&led_A0);
+    //ret = GPIO_Init(&led_C13);
 
-    uint32_t counter = 0;
+    ret = LED_Init();
+
+    // uint32_t counter = 0;
 
     while(1)
     {
-        ret = GPIO_TogglePin(&led_A0);
-        ret = GPIO_TogglePin(&led_C13);
+        // turn led by sequence
+        for(volatile uint8_t i = 0; i < LED_LEN; i++){
+            ret = LED_SetState(i, LED_HIGH);
+            for(volatile uint32_t j = 0; j < 1000000; j++);
+            ret = LED_SetState(i, LED_LOW);
+        }
+        for(volatile int8_t i = LED_LEN-2; i >= 1; i--){
+            ret = LED_SetState(i, LED_HIGH);
+            for(volatile uint32_t j = 0; j < 1000000; j++);
+            ret = LED_SetState(i, LED_LOW);
+        }
+
+        /*
+        //ret = GPIO_TogglePin(&led_A0);
+        //ret = GPIO_TogglePin(&led_C13);
         for(volatile uint32_t i = 0; i < 1000000; i++);
         counter++;
         if(counter == 6){
@@ -63,6 +79,9 @@ int main(){
             counter = 0;
             ret = RCC_ConfigureClock(&rcc_hsi);
         }
+        */
+
+        
     }
 
     

@@ -1,5 +1,5 @@
-#include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/include/private/MCAL/gpio_priv.h"
-#include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/include/interface/MCAL/gpio.h"
+#include "private/MCAL/gpio_priv.h"
+#include "interface/MCAL/gpio.h"
 
 #define GPIO_PORT_MAX 5
 
@@ -62,18 +62,18 @@ STD_ReturnType GPIO_DeInit(GPIO_t* gpio) {
         return STD_ERROR;
     }
     // Reset MODER (set as input mode = 00)
-    GPIOx->MODER.REG &= ~(0x3U << (pin * 2));
+    GPIOx->MODER.REG &= ~(GPIO_MODER_MASK << (pin * 2));
     // Reset OTYPER (push-pull = 0)
     GPIOx->OTYPER.REG &= ~(1U << pin);
     // Reset OSPEEDR (low speed = 00)
-    GPIOx->OSPEEDR.REG &= ~(0x3U << (pin * 2));
+    GPIOx->OSPEEDR.REG &= ~(GPIO_SPEED_MASK << (pin * 2));
     // Reset PUPDR (no pull = 00)
-    GPIOx->PUPDR.REG &= ~(0x3U << (pin * 2));
+    GPIOx->PUPDR.REG &= ~(GPIO_PULL_MASK << (pin * 2));
     // Reset AFRL/AFRH (AF0 = 0000)
     if (pin < 8) {
-        GPIOx->AFRL.REG &= ~(0xFU << (pin * 4));
+        GPIOx->AFRL.REG &= ~(GPIO_ALTF_MASK << (pin * 4));
     } else {
-        GPIOx->AFRH.REG &= ~(0xFU << ((pin - 8) * 4));
+        GPIOx->AFRH.REG &= ~(GPIO_ALTF_MASK << ((pin - 8) * 4));
     }
     // Reset output data (ODR = 0)
     GPIOx->ODR.REG &= ~(1U << pin);
@@ -147,12 +147,12 @@ STD_ReturnType GPIO_SetAltFunction(GPIO_t* gpio, GPIO_AltFunc_t altFunc){
         GPIOx_t* GPIOx = GPIO_PORTS[gpio->port];
         gpio->altFunc = altFunc;
         if(gpio->pin < 8){
-            GPIOx->AFRL.REG &= ~((0xFU) << (gpio->pin * 4));
-            GPIOx->AFRL.REG |= ((altFunc & 0xFU) << (gpio->pin * 4));
+            GPIOx->AFRL.REG &= ~((GPIO_ALTF_MASK) << (gpio->pin * 4));
+            GPIOx->AFRL.REG |= ((altFunc & GPIO_ALTF_MASK) << (gpio->pin * 4));
         }
         else{
-            GPIOx->AFRH.REG &= ~((0xFU) << ((gpio->pin - 8) * 4));
-            GPIOx->AFRH.REG |= ((altFunc & 0xFU) << ((gpio->pin - 8) * 4));
+            GPIOx->AFRH.REG &= ~((GPIO_ALTF_MASK) << ((gpio->pin - 8) * 4));
+            GPIOx->AFRH.REG |= ((altFunc & GPIO_ALTF_MASK) << ((gpio->pin - 8) * 4));
         }
     }
     return ret;

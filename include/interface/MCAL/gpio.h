@@ -6,6 +6,11 @@
 #define GPIO_MODER_MASK       0x3U
 #define GPIO_SPEED_MASK       0x3U
 #define GPIO_PULL_MASK        0x3U
+#define GPIO_ALTF_MASK        0xFU
+
+/*
+write/toggle port
+*/
 
 typedef enum {
     GPIO_PORTA = 0,
@@ -68,8 +73,8 @@ typedef enum {
 
 typedef enum {
     GPIO_AF0_SYSTEM       = 0x0U, // Default AF -> GPIO
-    GPIO_AF1_TIM1_TIM2,
-    GPIO_AF2_TIM3_TIM4_5,
+    GPIO_AF1_TIM1_2,
+    GPIO_AF2_TIM3_4_5,
     GPIO_AF3_TIM9_10_11,
     GPIO_AF4_I2C1_2_3,
     GPIO_AF5_SPI1_2,
@@ -78,8 +83,8 @@ typedef enum {
     GPIO_AF8_USART6,
     GPIO_AF9_I2C2_3,
     GPIO_AF10_OTG_FS,
-    GPIO_AF12_SDIO,  
-    GPIO_AF15_EVENTOUT
+    GPIO_AF12_SDIO        = 0xCU,  
+    GPIO_AF15_EVENTOUT    = 0xFU
 } GPIO_AltFunc_t;
 
 typedef struct{
