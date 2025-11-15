@@ -1,13 +1,9 @@
+#ifndef RCC_H
+#define RCC_H
+
 #include "../../../lib/STD_Types.h"
 
 #define RCC_PLL_MAX       0xFF
-
-/*
-Notes:
-- MASK input parameters for checking if correct params is sent
-- make peripheral parameters uint64_t to make bus ID at 32,33,34,35 bits and rest 0-31 bits for peripheral ID
-
-*/
 
 typedef enum {
     RCC_DISABLE = 0,
@@ -222,8 +218,10 @@ STD_ReturnType RCC_SetAPBPrescaler(RCC_APB_Prescaler_t prescaler, RCC_BusType_t 
 STD_ReturnType RCC_SetHSEBypass(RCC_Status_t status);
 
 /**
- * @brief  Enables the Clock Security System (CSS) to detect HSE failure.
+ * @brief  Enables/Disables the Clock Security System (CSS) to detect HSE failure.
  * @param  status: RCC_ENABLE to enable CSS, RCC_DISABLE to disable CSS.
  * @retval STD_SUCCESS if CSS was set successfully, otherwise STD_ERROR.
  */
-STD_ReturnType RCC_clockSecurityEnable(RCC_Status_t status);
+STD_ReturnType RCC_SetClockSecurity(RCC_Status_t status);
+
+#endif // RCC_H

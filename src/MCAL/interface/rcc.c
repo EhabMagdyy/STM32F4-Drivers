@@ -1,6 +1,6 @@
 
-#include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/include/interface/MCAL/rcc.h"
-#include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/include/private/MCAL/rcc_priv.h"
+#include "interface/MCAL/rcc.h"
+#include "private/MCAL/rcc_priv.h"
 
 STD_ReturnType RCC_ConfigureClock(const RCC_CFG_t *cfg){
     STD_ReturnType ret = STD_SUCCESS;

@@ -97,16 +97,81 @@ typedef struct{
     GPIO_AltFunc_t altFunc;
 } GPIO_t;
 
+/**
+ * @brief Initializes the specified GPIO pin with the given configuration.
+ * @param gpio: Pointer to the GPIO_t structure containing the pin configuration.
+ * @retval STD_SUCCESS if initialization was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType GPIO_Init(GPIO_t* gpio);
+
+/**
+ * @brief De-initializes the specified GPIO pin, resetting it to its default state.
+ * @param gpio: Pointer to the GPIO_t structure containing the pin configuration.
+ * @retval STD_SUCCESS if de-initialization was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType GPIO_DeInit(GPIO_t* gpio);
+
+/**
+ * @brief Sets the mode of the specified GPIO pin.
+ * @param gpio: Pointer to the GPIO_t structure containing the pin configuration.
+ * @param mode: The desired mode to set.
+ * @retval STD_SUCCESS if the operation was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType GPIO_SetMode(GPIO_t* gpio, GPIO_Mode_t mode);
+
+/**
+ * @brief Sets the speed of the specified GPIO pin.
+ * @param gpio: Pointer to the GPIO_t structure containing the pin configuration.
+ * @param speed: The desired speed to set.
+ * @retval STD_SUCCESS if the operation was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType GPIO_SetSpeed(GPIO_t* gpio, GPIO_Speed_t speed);
+
+/**
+ * @brief Sets the pull-up/pull-down configuration of the specified GPIO pin.
+ * @param gpio: Pointer to the GPIO_t structure containing the pin configuration.
+ * @param pull: The desired pull configuration to set.
+ * @retval STD_SUCCESS if the operation was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType GPIO_SetPull(GPIO_t* gpio, GPIO_Pull_t pull);
+
+/**
+ * @brief Sets the output type of the specified GPIO pin.
+ * @param gpio: Pointer to the GPIO_t structure containing the pin configuration.
+ * @param outputType: The desired output type to set.
+ * @retval STD_SUCCESS if the operation was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType GPIO_SetOutputType(GPIO_t* gpio, GPIO_OutputType_t outputType);
+
+/**
+ * @brief Sets the alternate function of the specified GPIO pin.
+ * @param gpio: Pointer to the GPIO_t structure containing the pin configuration.
+ * @param altFunc: The desired alternate function to set.
+ * @retval STD_SUCCESS if the operation was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType GPIO_SetAltFunction(GPIO_t* gpio, GPIO_AltFunc_t altFunc);
 
+/**
+ * @brief Writes a value to the specified GPIO pin.
+ * @param gpio: Pointer to the GPIO_t structure containing the pin configuration.
+ * @param state: The desired pin state to set (GPIO_PIN_SET or GPIO_PIN_RESET).
+ * @retval STD_SUCCESS if the operation was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType GPIO_WritePin(GPIO_t* gpio, GPIO_PinState_t state);
+
+/**
+ * @brief Reads the current state of the specified GPIO pin.
+ * @param gpio: Pointer to the GPIO_t structure containing the pin configuration.
+ * @param state: Pointer to store the read pin state (GPIO_PIN_SET or GPIO_PIN_RESET).
+ * @retval STD_SUCCESS if the operation was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType GPIO_ReadPin(GPIO_t* gpio, GPIO_PinState_t* state);
+
+/**
+ * @brief Toggles the current state of the specified GPIO pin.
+ * @param gpio: Pointer to the GPIO_t structure containing the pin configuration.
+ * @retval STD_SUCCESS if the operation was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType GPIO_TogglePin(GPIO_t* gpio);
 
 #endif /* _GPIO_H */

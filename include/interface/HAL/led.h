@@ -12,17 +12,34 @@ typedef enum {
 typedef enum {
     LED_HIGH = 0,
     LED_LOW
-} LED_STATE_t;
+} LED_State_t;
 
 typedef struct LED_Config {
     uint8_t port        : 4;
     uint8_t pin         : 4;
-    uint8_t activeState  : 1;
+    uint8_t activeState : 1;
     uint8_t isPP        : 1;
 } LED_Config_t;
 
+/**
+ * @brief Initializes the configured LEDs.
+ * @retval STD_SUCCESS if initialization was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType LED_Init(void);
-STD_ReturnType LED_SetState(uint8_t ledName, LED_STATE_t state);
+
+/**
+ * @brief Sets the state of the specified LED.
+ * @param ledName: The name/index of the LED to set.
+ * @param state: The desired state (LED_HIGH or LED_LOW).
+ * @retval STD_SUCCESS if the operation was successful, otherwise STD_ERROR.
+ */
+STD_ReturnType LED_SetState(uint8_t ledName, LED_State_t state);
+
+/**
+ * @brief Toggles the state of the specified LED.
+ * @param ledName: The name/index of the LED to toggle.
+ * @retval STD_SUCCESS if the operation was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType LED_Toggle(uint8_t ledName);
 
 #endif // LED_H

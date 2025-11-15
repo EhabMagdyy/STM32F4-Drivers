@@ -13,7 +13,7 @@ STD_ReturnType SWITCH_Init(void){
             .port       = SWITCHES[i].port,
             .pin        = SWITCHES[i].pin,
             .mode       = GPIO_MODE_INPUT,
-            .pullType = (SWITCHES[i].resConfig == SWITCH_INTERNAL_PULLUP) ? GPIO_PULLUP :
+            .pullType   = (SWITCHES[i].resConfig == SWITCH_INTERNAL_PULLUP) ? GPIO_PULLUP :
                              (SWITCHES[i].resConfig == SWITCH_INTERNAL_PULLDOWN) ? GPIO_PULLDOWN :
                              GPIO_NOPULL,
             .altFunc    = GPIO_AF0_SYSTEM
@@ -27,7 +27,7 @@ STD_ReturnType SWITCH_Init(void){
     return ret;
 }
 
-STD_ReturnType SWITCH_ReadState(uint8_t switchName, SWITCH_STATE_t* state){
+STD_ReturnType SWITCH_ReadState(uint8_t switchName, Switch_State_t* state){
     STD_ReturnType ret = STD_SUCCESS;
     if(switchName >= SWITCH_LEN || state == NULL){
         ret = STD_ERROR;

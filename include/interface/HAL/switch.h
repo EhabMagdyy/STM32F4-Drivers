@@ -15,7 +15,7 @@ typedef enum {
 typedef enum {
     SWITCH_RELEASED = 0,
     SWITCH_PRESSED
-} SWITCH_STATE_t;
+} Switch_State_t;
 
 typedef struct SWITCH_Config {
     uint8_t port        : 4;
@@ -23,7 +23,18 @@ typedef struct SWITCH_Config {
     uint8_t resConfig   : 3;
 } SWITCH_Config_t;
 
+/**
+ * @brief Initializes the configured switches.
+ * @retval STD_SUCCESS if initialization was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType SWITCH_Init(void);
-STD_ReturnType SWITCH_ReadState(uint8_t switchName, SWITCH_STATE_t* state);
+
+/**
+ * @brief Reads the state of the specified switch.
+ * @param switchName: The name/index of the switch to read.
+ * @param state: Pointer to store the read state (SWITCH_PRESSED or SWITCH_RELEASED).
+ * @retval STD_SUCCESS if read was successful, otherwise STD_ERROR.
+ */
+STD_ReturnType SWITCH_ReadState(uint8_t switchName, Switch_State_t* state);
 
 #endif // SWITCH_H

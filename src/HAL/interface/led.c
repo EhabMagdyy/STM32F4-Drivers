@@ -27,7 +27,7 @@ STD_ReturnType LED_Init(void){
     return ret;
 }
 
-STD_ReturnType LED_SetState(uint8_t ledName, LED_STATE_t state){
+STD_ReturnType LED_SetState(uint8_t ledName, LED_State_t state){
     STD_ReturnType ret = STD_SUCCESS;
     if(ledName >= LED_LEN){
         ret = STD_ERROR;
