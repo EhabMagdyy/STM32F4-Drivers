@@ -42,7 +42,7 @@ STD_ReturnType LED_SetState(uint8_t ledName, LED_STATE_t state){
 STD_ReturnType LED_Toggle(uint8_t ledName){
     STD_ReturnType ret = STD_SUCCESS;
     if(ledName >= LED_LEN){
-        return STD_ERROR;
+        ret = STD_ERROR;
     }
     ret = GPIO_TogglePin(&gpio_leds[ledName]);
     return ret;

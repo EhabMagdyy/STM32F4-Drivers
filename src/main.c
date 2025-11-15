@@ -3,6 +3,7 @@
 #include "/home/ehab/Documents/ITI_9Months/ARM/STM32F401_Drivers/lib/BIT_Math.h"
 #include "stm32f401xc.h"
 #include "interface/HAL/led.h"
+#include "interface/HAL/switch.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -41,29 +42,42 @@ GPIO_t led_C13 = {
 int main(){    
     STD_ReturnType ret = STD_SUCCESS;
 
-    ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
+    ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOB | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
 
     //ret = GPIO_Init(&led_A0);
     //ret = GPIO_Init(&led_C13);
 
     ret = LED_Init();
+    ret = SWITCH_Init();
+
+
+    SWITCH_STATE_t switchState;
 
     // uint32_t counter = 0;
 
     while(1)
     {
-        // turn led by sequence
-        for(volatile uint8_t i = 0; i < LED_LEN; i++){
-            ret = LED_SetState(i, LED_HIGH);
-            for(volatile uint32_t j = 0; j < 1000000; j++);
-            ret = LED_SetState(i, LED_LOW);
+        // SWITCH Driver
+        ret = SWITCH_ReadState(SWITCH_0, &switchState);
+        
+        if(ret == STD_SUCCESS){
+            if(switchState == SWITCH_PRESSED){
+                // LED Driver
+                for(volatile uint8_t i = 0; i < LED_LEN; i++){
+                    ret = LED_SetState(i, LED_HIGH);
+                    for(volatile uint32_t j = 0; j < 50000; j++);
+                    ret = LED_SetState(i, LED_LOW);
+                }
+                for(volatile int8_t i = LED_LEN-2; i >= 1; i--){
+                    ret = LED_SetState(i, LED_HIGH);
+                    for(volatile uint32_t j = 0; j < 50000; j++);
+                    ret = LED_SetState(i, LED_LOW);
+                }
+            }
+            else{
+                
+            }
         }
-        for(volatile int8_t i = LED_LEN-2; i >= 1; i--){
-            ret = LED_SetState(i, LED_HIGH);
-            for(volatile uint32_t j = 0; j < 1000000; j++);
-            ret = LED_SetState(i, LED_LOW);
-        }
-
         /*
         //ret = GPIO_TogglePin(&led_A0);
         //ret = GPIO_TogglePin(&led_C13);
