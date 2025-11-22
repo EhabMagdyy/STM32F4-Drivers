@@ -28,6 +28,12 @@ typedef struct LED_Config {
 STD_ReturnType LED_Init(void);
 
 /**
+ * @brief DeInitializes the configured LEDs.
+ * @retval STD_SUCCESS if de-initialization was successful, otherwise STD_ERROR.
+ */
+STD_ReturnType LED_DeInit(uint8_t ledName);
+
+/**
  * @brief Sets the state of the specified LED.
  * @param ledName: The name/index of the LED to set.
  * @param state: The desired state (LED_HIGH or LED_LOW).

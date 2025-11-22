@@ -27,6 +27,19 @@ STD_ReturnType LED_Init(void){
     return ret;
 }
 
+STD_ReturnType LED_DeInit(uint8_t ledName){
+    STD_ReturnType ret = STD_SUCCESS;
+    
+    if(ledName >= LED_LEN){
+        ret = STD_ERROR;
+    }
+    else{
+        ret = GPIO_DeInit(&gpio_leds[ledName]);
+    }
+    
+    return ret;
+}
+
 STD_ReturnType LED_SetState(uint8_t ledName, LED_State_t state){
     STD_ReturnType ret = STD_SUCCESS;
     if(ledName >= LED_LEN){
