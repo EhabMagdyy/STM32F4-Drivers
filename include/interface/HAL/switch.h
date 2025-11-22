@@ -30,6 +30,12 @@ typedef struct SWITCH_Config {
 STD_ReturnType SWITCH_Init(void);
 
 /**
+ * @brief DeInitializes the configured switches.
+ * @retval STD_SUCCESS if de-initialization was successful, otherwise STD_ERROR.
+ */
+STD_ReturnType SWITCH_DeInit(uint8_t switchName);
+
+/**
  * @brief Reads the state of the specified switch.
  * @param switchName: The name/index of the switch to read.
  * @param state: Pointer to store the read state (SWITCH_PRESSED or SWITCH_RELEASED).

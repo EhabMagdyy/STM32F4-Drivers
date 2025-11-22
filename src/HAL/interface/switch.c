@@ -27,6 +27,19 @@ STD_ReturnType SWITCH_Init(void){
     return ret;
 }
 
+STD_ReturnType SWITCH_DeInit(uint8_t switchName){
+    STD_ReturnType ret = STD_SUCCESS;
+    
+    if(switchName >= SWITCH_LEN){
+        ret = STD_ERROR;
+    }
+    else{
+        ret = GPIO_DeInit(&gpio_switches[switchName]);
+    }
+    
+    return ret;
+}
+
 STD_ReturnType SWITCH_ReadState(uint8_t switchName, Switch_State_t* state){
     STD_ReturnType ret = STD_SUCCESS;
     if(switchName >= SWITCH_LEN || state == NULL){
