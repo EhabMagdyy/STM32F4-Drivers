@@ -3,6 +3,7 @@
 #include "../lib/BIT_Math.h"
 #include "interface/HAL/led.h"
 #include "interface/HAL/switch.h"
+#include "interface/HAL/sevenseg.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -23,53 +24,19 @@ int main(){
 
     ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOB | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
 
-    ret = LED_Init();
-    ret = SWITCH_Init();
+    ret = SevenSegment_Init();
 
-
-    Switch_State_t switchState;
-
-    uint32_t counter = 0;
+    uint8_t counter = 0, state = SEVEN_SEGMENT_DOT_OFF;
 
     while(1){
-        // SWITCH Driver (Read Switch State)
-        ret = SWITCH_ReadState(SWITCH_0, &switchState);
-        
-        if(ret == STD_SUCCESS){
-            if(switchState == SWITCH_PRESSED){
-                // LED Driver (Toggle LEDs in sequence)
-                for(volatile uint8_t i = 0; i < LED_LEN; i++){
-                    ret = LED_SetState(i, LED_HIGH);
-                    for(volatile uint32_t j = 0; j < 100000; j++);
-                    ret = LED_SetState(i, LED_LOW);
-                }
-                for(volatile int8_t i = LED_LEN-2; i >= 1; i--){
-                    ret = LED_SetState(i, LED_HIGH);
-                    for(volatile uint32_t j = 0; j < 100000; j++);
-                    ret = LED_SetState(i, LED_LOW);
-                }
-            }
-            else{
-                // Do nothing
-            }
-        }
-        else{
-            // Do nothing
-        }
-        // Switching Clock Source during runtime (HSI (16MHz) -> HSE (25MHz) -> PLL (84MHz) -> HSI (16MHz) ...)
-        counter++;
-        if(counter == 2){
-            ret = RCC_ConfigureClock(&rcc_hse);
-        }
-        else if(counter == 6){
-            ret = RCC_ConfigureClock(&rcc_pll);
-        }
-        else if(counter == 16){
+        SevenSegment_Write(SEVEN_SEGMENT_0, counter++);
+        for(volatile uint32_t delay = 0; delay < 250000; delay++);
+        if(counter == 10){
             counter = 0;
-            ret = RCC_ConfigureClock(&rcc_hsi);
-        }
-        else{
-            // Do nothing
+            state = !state;
+            // SevenSegment_SetDotState(SEVEN_SEGMENT_0, state);
+            SevenSegment_Clear(SEVEN_SEGMENT_0);
+            for(volatile uint32_t delay = 0; delay < 1000000; delay++);
         }
     }
 

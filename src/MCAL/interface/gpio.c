@@ -4,7 +4,7 @@
 #define GPIO_PORT_MAX 5
 
 // Array of GPIO pointers
-GPIOx_t* GPIO_PORTS[GPIO_PORT_MAX] = {GPIOA, GPIOB, GPIOC, GPIOD, GPIOE};
+GPIOx_t* const GPIO_PORTS[GPIO_PORT_MAX] = {GPIOA, GPIOB, GPIOC, GPIOD, GPIOE};
 
 STD_ReturnType GPIO_Init(GPIO_t* gpio){
     STD_ReturnType ret = STD_SUCCESS;
