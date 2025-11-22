@@ -1,0 +1,9 @@
+#ifndef SEVEN_SEGMENT_CFG_H
+#define SEVEN_SEGMENT_CFG_H
+
+typedef enum {
+    SEVEN_SEGMENT_0 = 0,
+    SEVEN_SEGMENT_LEN
+} SEVEN_SEGMENT_Names_t;
+
+#endif // SEVEN_SEGMENT_CFG_H
