@@ -1,9 +1,9 @@
 #include "interface/MCAL/rcc.h"
-#include "interface/MCAL/gpio.h"
-#include "../lib/BIT_Math.h"
 #include "interface/HAL/led.h"
 #include "interface/HAL/switch.h"
 #include "interface/HAL/sevenseg.h"
+#include "interface/Core/nvic.h"
+#include "interface/Core/systick.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -24,7 +24,9 @@ int main(){
 
     ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOB | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
 
-    ret = SevenSegment_Init();
+    if (ret == STD_SUCCESS) {
+        ret = SevenSegment_Init();
+    }
 
     uint8_t counter = 0, state = SEVEN_SEGMENT_DOT_OFF;
 
@@ -39,7 +41,6 @@ int main(){
             for(volatile uint32_t delay = 0; delay < 1000000; delay++);
         }
     }
-
     
     return 0;
 }
