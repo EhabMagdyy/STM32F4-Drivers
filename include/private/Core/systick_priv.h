@@ -6,10 +6,10 @@
 #define SYSTICK_BASE_ADDRESS	0xE000E010UL
 
 typedef struct{
-    uint32_t CSR;       // Control and Status Register
-    uint32_t RVR;       // Reload Value Register 	 
-    uint32_t CVR;       // Current Value Register 	 
-    uint32_t CALIB;     // Calibration Value Register
+    volatile uint32_t CSR;       // Control and Status Register
+    volatile uint32_t RVR;       // Reload Value Register 	 
+    volatile uint32_t CVR;       // Current Value Register 	 
+    volatile uint32_t CALIB;     // Calibration Value Register
 } STK_t;
 
 #define STK     ((STK_t*)SYSTICK_BASE_ADDRESS)

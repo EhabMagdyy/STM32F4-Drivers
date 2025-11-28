@@ -19,9 +19,16 @@ typedef void (*FuncPtr)(void);
 #define SYSTICK_SINGLE_INTERVAL_MODE				0
 #define SYSTICK_PERIODIC_INTERVAL_MODE				1
 
-STD_ReturnType SYSTICK_Init(void);
+typedef enum {
+    SYSTICK_CLOCK_SOURCE_HSI = 0,
+    SYSTICK_CLOCK_SOURCE_HSE,
+    SYSTICK_CLOCK_SOURCE_PLL_MAX
+} SYSTICK_ClockSource_t;
+
+STD_ReturnType SYSTICK_Init(SYSTICK_ClockSource_t clockSource);
 STD_ReturnType SYSTICK_Stop(void);
 STD_ReturnType SYSTICK_DelayMS(uint16_t delayMillieSec);
+STD_ReturnType SYSTICK_DelayUS(uint32_t delayMicroSec);
 STD_ReturnType SYSTICK_SingleInterval(uint16_t delayMillieSec, FuncPtr SysTickHandler_CB);
 STD_ReturnType SYSTICK_PeriodicInterval(uint16_t delayMillieSec, FuncPtr SysTickKHandler_CB);
 STD_ReturnType SYSTICK_GetRemainingTicks(uint32_t* remTicks);
