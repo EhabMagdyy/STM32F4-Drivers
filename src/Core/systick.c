@@ -168,14 +168,17 @@ STD_ReturnType SYSTICK_GetElapsedTicks(uint32_t* elapsedTicks){
 
 // Systick ISR
 void SysTick_Handler(void){
-	if(SYSTICK_mode == SYSTICK_SINGLE_INTERVAL_MODE){
-		SYSTICK_Stop();
-	}
-	else{
-		// Do Nothing
-	}
 	if(NULL != SysTickHandler_CallBack){
-		SysTickHandler_CallBack();
+		if(SYSTICK_mode == SYSTICK_SINGLE_INTERVAL_MODE){
+			SYSTICK_Stop();
+			SysTickHandler_CallBack();
+		}
+		else if(SYSTICK_mode == SYSTICK_PERIODIC_INTERVAL_MODE){
+			SysTickHandler_CallBack();
+		}
+		else{
+			// Do Nothing
+		}
 	}
 	else{
 		// Do Nothing
