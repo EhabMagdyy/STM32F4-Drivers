@@ -16,7 +16,7 @@ STD_ReturnType SevenSegment_Init(void){
     STD_ReturnType ret = STD_SUCCESS;
 
     for(volatile uint8_t NumOfSevSegs = 0; NumOfSevSegs < SEVEN_SEGMENT_LEN; NumOfSevSegs++){
-        for(volatile uint8_t NumOfLeds = 0; NumOfLeds < SEVEN_SEGMENT_NUMBER_OF_SEGMENTS+1; NumOfLeds++){
+        for(volatile uint8_t NumOfLeds = 0; NumOfLeds < SEVEN_SEGMENT_NUMBER_OF_SEGMENTS+2; NumOfLeds++){
 
             uint8_t pin = SEVEN_SEGMENTS[NumOfSevSegs].pins[NumOfLeds];
 
@@ -36,6 +36,9 @@ STD_ReturnType SevenSegment_Init(void){
         }
         if(ret == STD_ERROR){
             break;
+        }
+        else{
+            ret = SevenSegment_Enable(NumOfSevSegs);
         }
     }
 
@@ -84,7 +87,6 @@ STD_ReturnType SevenSegment_Write(SEVEN_SEGMENT_Names_t sevSegName, uint8_t numb
     return ret;
 }
 
-
 STD_ReturnType SevenSegment_SetDotState(SEVEN_SEGMENT_Names_t sevSegName, SEVEN_SEGMENT_Dot_State_t state){
     STD_ReturnType ret = STD_SUCCESS;
 
@@ -103,6 +105,41 @@ STD_ReturnType SevenSegment_SetDotState(SEVEN_SEGMENT_Names_t sevSegName, SEVEN_
     return ret;
 }
 
+STD_ReturnType SevenSegment_Enable(SEVEN_SEGMENT_Names_t sevSegName){
+    STD_ReturnType ret = STD_SUCCESS;
+
+    if(sevSegName >= SEVEN_SEGMENT_LEN){
+        ret = STD_ERROR;
+    }
+    else{
+        const uint8_t isCommonAnode = (SEVEN_SEGMENTS[sevSegName].type == SEVEN_SEGMENT_COMMON_ANODE);
+             
+        ret = GPIO_WritePin(&gpioSevenSegment[sevSegName][SEVEN_SEGMENTS[sevSegName].pins[8]], 0 ^ isCommonAnode);
+        if(ret != STD_SUCCESS){
+            ret = STD_ERROR;
+        }
+    }
+
+    return ret;
+}
+
+STD_ReturnType SevenSegment_Disable(SEVEN_SEGMENT_Names_t sevSegName){
+    STD_ReturnType ret = STD_SUCCESS;
+
+    if(sevSegName >= SEVEN_SEGMENT_LEN){
+        ret = STD_ERROR;
+    }
+    else{
+        const uint8_t isCommonAnode = (SEVEN_SEGMENTS[sevSegName].type == SEVEN_SEGMENT_COMMON_ANODE);
+             
+        ret = GPIO_WritePin(&gpioSevenSegment[sevSegName][SEVEN_SEGMENTS[sevSegName].pins[8]], 1 ^ isCommonAnode);
+        if(ret != STD_SUCCESS){
+            ret = STD_ERROR;
+        }
+    }
+
+    return ret;
+}
 
 STD_ReturnType SevenSegment_Clear(SEVEN_SEGMENT_Names_t sevSegName){
     STD_ReturnType ret = STD_SUCCESS;
