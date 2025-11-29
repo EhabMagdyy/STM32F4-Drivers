@@ -89,7 +89,7 @@ static STD_ReturnType delay(uint32_t delayTicks){
 	STK->CVR = 0;
 	STK->CSR |= (1 << SYSTICK_CSR_ENABLE_BIT_POS);
 	while(!((STK->CSR >> SYSTICK_CSR_COUNTFLAG_BIT_POS) & 1U));
-	ret = SYSTICK_Stop();
+	//ret = SYSTICK_Stop();
 
 	return ret;
 }
