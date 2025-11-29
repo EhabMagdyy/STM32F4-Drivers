@@ -5,6 +5,7 @@
 
 const SEVEN_SEGMENT_Config_t SEVEN_SEGMENTS[SEVEN_SEGMENT_LEN] = {
     [SEVEN_SEGMENT_0] = { .port = GPIO_PORTA,
-                          .pins = {0, 1, 2, 3, 4, 5, 6, 7, 8},     // A B C D E F G DOT COM
+                          .pins = {GPIO_PIN_0, GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3, GPIO_PIN_4, 
+                                   GPIO_PIN_5, GPIO_PIN_6, GPIO_PIN_7, GPIO_PIN_8},     // A B C D E F G DOT COM
                           .type = SEVEN_SEGMENT_COMMON_CATHODE},
 };
