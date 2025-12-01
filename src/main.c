@@ -23,9 +23,13 @@ RCC_CFG_t rcc_hse = {
 
 void ToggleLED(void* arg){
     static volatile uint8_t ledState[LED_LEN] = {LED_LOW};
-    ledState[*(uint8_t*)arg] = !ledState[*(uint8_t*)arg];
-    uint8_t ledNumber = *(uint8_t*)arg;
-    LED_SetState(ledNumber, ledState[ledNumber]);
+    static Switch_State_t SwitchState = SWITCH_RELEASED;
+    SWITCH_ReadState(SWITCH_0, &SwitchState);
+    if(SwitchState == SWITCH_PRESSED){
+        ledState[*(uint8_t*)arg] = !ledState[*(uint8_t*)arg];
+        uint8_t ledNumber = *(uint8_t*)arg;
+        LED_SetState(ledNumber, ledState[ledNumber]);
+    }
 }
 
 Runnable__t runnable1 = {
@@ -57,6 +61,7 @@ int main(){
     }
 
     ret = LED_Init();
+    ret = SWITCH_Init();
 
     ret = Scheduler_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX, 1);
     ret = Scheduler_RegisterRunnable(&runnable1);
@@ -64,7 +69,9 @@ int main(){
     ret = Scheduler_RegisterRunnable(&runnable3);
     Scheduler_Start();
 
-    while(1){}
+    while(1){
+        for(volatile uint32_t i = 0; i < 500000; i++);
+    }
     
     return 0;
 }
