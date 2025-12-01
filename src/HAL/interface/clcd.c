@@ -54,7 +54,7 @@ STD_ReturnType CLCD_Init(void){
                 .pullType   = GPIO_NOPULL,
                 .altFunc    = GPIO_AF0_SYSTEM
             };
-            ret = GPIO_Init(&clcd[i].dataPins[j]);
+            ret = GPIO_Init(&clcd[i].dataPins[j]); 
         }
 
         if(ret != STD_SUCCESS){

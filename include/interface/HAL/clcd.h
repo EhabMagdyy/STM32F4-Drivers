@@ -35,7 +35,7 @@
 
 #define ROW1    1
 #define ROW2    2
-
+ 
 typedef struct
 {
     GPIO_t rsPin;

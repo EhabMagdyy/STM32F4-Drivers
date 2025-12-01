@@ -16,5 +16,5 @@ CLCD_t clcd[CLCD_LEN] =
     [CLCD_0].dataPins[2].port = GPIO_PORTA,
     [CLCD_0].dataPins[2].pin = GPIO_PIN_5,
     [CLCD_0].dataPins[3].port = GPIO_PORTA,
-    [CLCD_0].dataPins[3].pin = GPIO_PIN_6,
+    [CLCD_0].dataPins[3].pin = GPIO_PIN_6, 
 };
