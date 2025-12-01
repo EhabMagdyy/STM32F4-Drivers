@@ -44,14 +44,12 @@ typedef struct
     GPIO_t dataPins[4];
 } CLCD_t;
 
-void CLCD_Init();
-void CLCD_WriteCommand(CLCD_Instance_t clcd, uint8_t command);
-void CLCD_WriteChar(CLCD_Instance_t clcd, uint8_t data);
-void CLCD_WriteCharPos(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, uint8_t data);
-void CLCD_WriteString(CLCD_Instance_t clcd, uint8_t *string);
-void CLCD_WriteStringPos(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, uint8_t *string);
-void CLCD_WriteCustomCharacter(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn,
-                                 const uint8_t ch[], uint8_t mem_pos);
-
+STD_ReturnType CLCD_Init();
+STD_ReturnType CLCD_WriteCommand(CLCD_Instance_t clcd, uint8_t command);
+STD_ReturnType CLCD_WriteChar(CLCD_Instance_t clcd, uint8_t data);
+STD_ReturnType CLCD_WriteCharPos(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, uint8_t data);
+STD_ReturnType CLCD_WriteString(CLCD_Instance_t clcd, uint8_t *string);
+STD_ReturnType CLCD_WriteStringPos(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, uint8_t *string);
+STD_ReturnType CLCD_WriteCustomCharacter(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, const uint8_t ch[], uint8_t mem_pos);
 
 #endif  /* CLCD_H */
