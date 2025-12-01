@@ -4,7 +4,4 @@
 #include "interface/MCAL/gpio.h"
 
 const SWITCH_Config_t SWITCHES[SWITCH_LEN] = {
-    [SWITCH_0] = { .port = GPIO_PORTB, .pin = GPIO_PIN_0, .resConfig = SWITCH_INTERNAL_PULLUP },
-    [SWITCH_1] = { .port = GPIO_PORTB, .pin = GPIO_PIN_1, .resConfig = SWITCH_INTERNAL_PULLUP },
-    [SWITCH_2] = { .port = GPIO_PORTB, .pin = GPIO_PIN_2, .resConfig = SWITCH_INTERNAL_PULLUP },
-};
+    [SWITCH_0] = { .port = GPIO_PORTB, .pin = GPIO_PIN_0, .resConfig = SWITCH_INTERNAL_PULLUP }};
