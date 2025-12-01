@@ -5,13 +5,13 @@
 #include "configuration/HAL/led_cfg.h"
 
 typedef enum {
-    LED_ACTIVE_LOW = 0,
-    LED_ACTIVE_HIGH
+    LED_ACTIVE_HIGH = 0,
+    LED_ACTIVE_LOW
 } LED_ACTIVE_STATE_t;
 
 typedef enum {
-    LED_HIGH = 0,
-    LED_LOW
+    LED_LOW = 0,
+    LED_HIGH
 } LED_State_t;
 
 typedef struct LED_Config {
