@@ -27,6 +27,8 @@ typedef enum {
 
 STD_ReturnType SYSTICK_Init(SYSTICK_ClockSource_t clockSource);
 STD_ReturnType SYSTICK_Stop(void);
+STD_ReturnType SYSTICK_Enable(void);
+STD_ReturnType SYSTICK_Disable(void);
 STD_ReturnType SYSTICK_DelayMS(uint16_t delayMillieSec);
 STD_ReturnType SYSTICK_DelayUS(uint32_t delayMicroSec);
 STD_ReturnType SYSTICK_SingleInterval(uint16_t delayMillieSec, FuncPtr SysTickHandler_CB);

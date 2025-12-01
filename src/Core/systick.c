@@ -8,6 +8,7 @@ static volatile FuncPtr SysTickHandler_CallBack = NULL;
 
 volatile uint32_t SYSTICK_mode = SYSTICK_SINGLE_INTERVAL_MODE;
 static uint32_t sysClockSourceKHz = 0;
+extern volatile uint8_t schedStartFlag;
 
 STD_ReturnType SYSTICK_Init(SYSTICK_ClockSource_t clockSource){
 	STD_ReturnType ret = STD_SUCCESS;
@@ -48,6 +49,22 @@ STD_ReturnType SYSTICK_Stop(void){
 	STK->RVR = 0;										// Clear Reload Value
 	STK->CVR = 0;										// Clear Current Value
 	STK->CSR &= ~(1 << SYSTICK_CSR_TICKINT_BIT_POS);	// Disable Exception Request
+
+	return ret;
+}
+
+STD_ReturnType SYSTICK_Enable(void){
+	STD_ReturnType ret = STD_SUCCESS;
+
+	STK->CSR |= (1 << SYSTICK_CSR_ENABLE_BIT_POS);
+
+	return ret;
+}
+
+STD_ReturnType SYSTICK_Disable(void){
+	STD_ReturnType ret = STD_SUCCESS;
+
+	STK->CSR &= ~(1 << SYSTICK_CSR_ENABLE_BIT_POS);
 
 	return ret;
 }
@@ -97,21 +114,16 @@ static STD_ReturnType delay(uint32_t delayTicks){
 STD_ReturnType SYSTICK_SingleInterval(uint16_t delayMillieSec, FuncPtr SysTickHandler_CB){
 	STD_ReturnType ret = STD_SUCCESS;
 
-	if(NULL == SysTickHandler_CB){
+	uint32_t reqReloadVal = (delayMillieSec * sysClockSourceKHz) - 1;
+	if(reqReloadVal > SYSTICK_MAX_TICKS){
 		ret = STD_ERROR;
 	}
 	else{
-		uint32_t reqReloadVal = (delayMillieSec * sysClockSourceKHz) - 1;
-		if(reqReloadVal > SYSTICK_MAX_TICKS){
-			ret = STD_ERROR;
-		}
-		else{
-			STK->RVR = reqReloadVal;
-			SysTickHandler_CallBack = SysTickHandler_CB;
-			STK->CSR |= (1 << SYSTICK_CSR_TICKINT_BIT_POS);
-			SYSTICK_mode = SYSTICK_SINGLE_INTERVAL_MODE;		
-			STK->CSR |= (1 << SYSTICK_CSR_ENABLE_BIT_POS);
-		}
+		STK->RVR = reqReloadVal;
+		SysTickHandler_CallBack = SysTickHandler_CB;
+		STK->CSR |= (1 << SYSTICK_CSR_TICKINT_BIT_POS);
+		SYSTICK_mode = SYSTICK_SINGLE_INTERVAL_MODE;		
+		STK->CSR |= (1 << SYSTICK_CSR_ENABLE_BIT_POS);
 	}
 
 	return ret;
@@ -120,21 +132,16 @@ STD_ReturnType SYSTICK_SingleInterval(uint16_t delayMillieSec, FuncPtr SysTickHa
 STD_ReturnType SYSTICK_PeriodicInterval(uint16_t delayMillieSec, FuncPtr SysTickHandler_CB){
 	STD_ReturnType ret = STD_SUCCESS;
 
-	if(NULL == SysTickHandler_CB){
+	uint32_t reqReloadVal = (delayMillieSec * sysClockSourceKHz) - 1;
+	if(reqReloadVal > SYSTICK_MAX_TICKS){
 		ret = STD_ERROR;
 	}
-	else{ 
-		uint32_t reqReloadVal = (delayMillieSec * sysClockSourceKHz) - 1;
-		if(reqReloadVal > SYSTICK_MAX_TICKS){
-			ret = STD_ERROR;
-		}
-		else{
-			STK->RVR = reqReloadVal;
-			SysTickHandler_CallBack = SysTickHandler_CB;
-			STK->CSR |= (1 << SYSTICK_CSR_TICKINT_BIT_POS);
-			SYSTICK_mode = SYSTICK_PERIODIC_INTERVAL_MODE;
-			STK->CSR |= (1 << SYSTICK_CSR_ENABLE_BIT_POS);
-		}
+	else{
+		STK->RVR = reqReloadVal;
+		SysTickHandler_CallBack = SysTickHandler_CB;
+		STK->CSR |= (1 << SYSTICK_CSR_TICKINT_BIT_POS);
+		SYSTICK_mode = SYSTICK_PERIODIC_INTERVAL_MODE;
+		STK->CSR |= (1 << SYSTICK_CSR_ENABLE_BIT_POS);
 	}
 
 	return ret;
@@ -168,19 +175,6 @@ STD_ReturnType SYSTICK_GetElapsedTicks(uint32_t* elapsedTicks){
 
 // Systick ISR
 void SysTick_Handler(void){
-	if(NULL != SysTickHandler_CallBack){
-		if(SYSTICK_mode == SYSTICK_SINGLE_INTERVAL_MODE){
-			SYSTICK_Stop();
-			SysTickHandler_CallBack();
-		}
-		else if(SYSTICK_mode == SYSTICK_PERIODIC_INTERVAL_MODE){
-			SysTickHandler_CallBack();
-		}
-		else{
-			// Do Nothing
-		}
-	}
-	else{
-		// Do Nothing
-	}
+	schedStartFlag = 1;
+	// we can call the callback function if assigned
 }
