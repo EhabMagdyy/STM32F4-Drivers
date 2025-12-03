@@ -24,8 +24,9 @@
 #define LCD_SHIFT_DISPLAY_SHIFT_LEFT                0x18
 #define LCD_SHIFT_DISPLAY_SHIFT_RIGHT               0x1C
 
+#define LCD_4BIT_MODE                               0x02
+#define LCD_8BIT_MODE                               0x03
 #define LCD_4BIT_MODE_2LINES                        0x28
-#define LCD_8BIT_MODE_2LINES                        0x38
 
 #define LCD_CGRAM_START                             0x40
 #define LCD_DDRAM_START                             0x80

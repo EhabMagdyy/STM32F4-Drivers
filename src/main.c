@@ -21,56 +21,51 @@ RCC_CFG_t rcc_hse = {
     .sysClkSource = RCC_CLOCK_SOURCE_HSE,
 };
 
-void ToggleLED(void* arg){
-    static volatile uint8_t ledState[LED_LEN] = {LED_LOW};
-    static Switch_State_t SwitchState = SWITCH_RELEASED;
-    SWITCH_ReadState(SWITCH_0, &SwitchState);
-    if(SwitchState == SWITCH_PRESSED){
-        ledState[*(uint8_t*)arg] = !ledState[*(uint8_t*)arg];
-        uint8_t ledNumber = *(uint8_t*)arg;
-        LED_SetState(ledNumber, ledState[ledNumber]);
+void sevSegDisplay(void){
+    static uint8_t counter = 0, state = SEVEN_SEGMENT_DOT_OFF;
+    SevenSegment_Write(SEVEN_SEGMENT_0, counter%10);
+    counter++;
+    if(counter == 11){
+        counter = 0;
+        state = !state;
+        SevenSegment_Clear(SEVEN_SEGMENT_0);
     }
+}
+
+void ToggleLED(void){
+    static uint8_t ledState = LED_LOW;
+    ledState = !ledState;
+    LED_SetState(LED_0, ledState);
 }
 
 Runnable__t runnable1 = {
     .callback = ToggleLED,
     .Periodicity = 100,
-    .FirstDelay = 5,
+    .FirstDelay = 0,
     .arg = LED_0
-};
-
-Runnable__t runnable2 = {
-    .callback = ToggleLED,
-    .Periodicity = 140,
-    .FirstDelay = 0,
-    .arg = LED_1
-};
-
-Runnable__t runnable3 = {
-    .callback = ToggleLED,
-    .Periodicity = 70,
-    .FirstDelay = 0,
-    .arg = LED_2
 };
 
 int main(){    
     STD_ReturnType ret = STD_SUCCESS;
     ret = RCC_ConfigureClock(&rcc_pll);
-    if(ret == STD_SUCCESS){
-        ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOB | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
-    }
+    ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOB | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
+    ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
 
-    ret = LED_Init();
-    ret = SWITCH_Init();
+    //ret = SevenSegment_Init();
+    //ret = LED_Init();
+    
+    //ret = Scheduler_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX, 1);
+    //ret = Scheduler_RegisterRunnable(&runnable1);
+    //ret = Scheduler_Start();
 
-    ret = Scheduler_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX, 1);
-    ret = Scheduler_RegisterRunnable(&runnable1);
-    ret = Scheduler_RegisterRunnable(&runnable2);
-    ret = Scheduler_RegisterRunnable(&runnable3);
-    Scheduler_Start();
+    CLCD_Init();
+    CLCD_WriteStringPos(CLCD_0, 1, 4, "Ehab");
+    CLCD_WriteCustomCharacter(CLCD_0, 1, 9, (uint8_t[]){0x00,0x11,0x0E,0x15,0x15,0x15,0x15,0x04}, 0);
+    CLCD_WriteStringPos(CLCD_0, 1, 11, "ES46");
+
+    //SYSTICK_PeriodicInterval(250, sevSegDisplay);
 
     while(1){
-        for(volatile uint32_t i = 0; i < 500000; i++);
     }
     
     return 0;

@@ -67,23 +67,22 @@ STD_ReturnType CLCD_Init(void){
             break;
         }
 		ret = SYSTICK_DelayMS(40);
-		ret = CLCD_WriteCommand(i, LCD_8BIT_MODE_2LINES);
+        ret = CLCD_WriteCommand(i, LCD_8BIT_MODE);
         ret = SYSTICK_DelayMS(5);
-        ret = CLCD_WriteCommand(i, LCD_8BIT_MODE_2LINES);
+        ret = CLCD_WriteCommand(i, LCD_8BIT_MODE);
         ret = SYSTICK_DelayMS(1);
-        ret = CLCD_WriteCommand(i, LCD_8BIT_MODE_2LINES);
-        ret = CLCD_WriteCommand(i, LCD_CLEAR);
+        ret = CLCD_WriteCommand(i, LCD_8BIT_MODE);
         ret = SYSTICK_DelayMS(2);
-        ret = CLCD_WriteCommand(i, LCD_CURSOR_HOME);
+        ret = CLCD_WriteCommand(i, LCD_4BIT_MODE);
         ret = SYSTICK_DelayMS(2);
-        ret = CLCD_WriteCommand(i, LCD_INCREMENT_SHIFT_OFF);
+        ret = CLCD_WriteCommand(i, LCD_4BIT_MODE_2LINES);
         ret = SYSTICK_DelayMS(2);
         ret = CLCD_WriteCommand(i, LCD_DISPLAY_ON_UNDERLINE_OFF_CURSOR_OFF);
         ret = SYSTICK_DelayMS(2);
-
-        ret = CLCD_WriteCommand(i, LCD_4BIT_MODE_2LINES);
+        ret = CLCD_WriteCommand(i, LCD_CLEAR);
         ret = SYSTICK_DelayMS(2);
-        ret = CLCD_WriteCommand(i, LCD_DDRAM_START);
+        ret = CLCD_WriteCommand(i, LCD_INCREMENT_SHIFT_OFF);
+        ret = SYSTICK_DelayMS(2);
 	}
 
     return ret;
