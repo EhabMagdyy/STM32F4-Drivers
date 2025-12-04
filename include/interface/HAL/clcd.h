@@ -36,6 +36,67 @@
 
 #define ROW1    1
 #define ROW2    2
+
+typedef enum{
+    CLCD_ASYNC_NOACTION = 0,
+    CLCD_ASYNC_INIT,
+    CLCD_ASYNC_WRITE_DATA,
+    CLCD_ASYNC_WRITE_COMMAND,
+    CLCD_ASYNC_WRITE_DATA_POS
+} CLCD_ASYNC_State_t;
+
+typedef enum{
+    CLCD_ASYNC_NO_ACTION = 0,
+
+    CLCD_ASYNC_FUNCTION_SET_1_HIGHNIBBLE_EN,
+    CLCD_ASYNC_FUNCTION_SET_1_HIGHNIBBLE_DIS,
+    CLCD_ASYNC_FUNCTION_SET_1_LOWNIBBLE_EN,
+    CLCD_ASYNC_FUNCTION_SET_1_LOWNIBBLE_DIS,
+
+    CLCD_ASYNC_FUNCTION_SET_2_HIGHNIBBLE_EN,
+    CLCD_ASYNC_FUNCTION_SET_2_HIGHNIBBLE_DIS,
+    CLCD_ASYNC_FUNCTION_SET_2_LOWNIBBLE_EN,
+    CLCD_ASYNC_FUNCTION_SET_2_LOWNIBBLE_DIS,
+
+    CLCD_ASYNC_FUNCTION_SET_3_HIGHNIBBLE_EN,
+    CLCD_ASYNC_FUNCTION_SET_3_HIGHNIBBLE_DIS,
+    CLCD_ASYNC_FUNCTION_SET_3_LOWNIBBLE_EN,
+    CLCD_ASYNC_FUNCTION_SET_3_LOWNIBBLE_DIS,
+
+    CLCD_ASYNC_FUNCTION_SET_4_HIGHNIBBLE_EN,
+    CLCD_ASYNC_FUNCTION_SET_4_HIGHNIBBLE_DIS,
+    CLCD_ASYNC_FUNCTION_SET_4_LOWNIBBLE_EN,
+    CLCD_ASYNC_FUNCTION_SET_4_LOWNIBBLE_DIS,
+
+    CLCD_ASYNC_FUNCTION_SET_5_HIGHNIBBLE_EN,
+    CLCD_ASYNC_FUNCTION_SET_5_HIGHNIBBLE_DIS,
+    CLCD_ASYNC_FUNCTION_SET_5_LOWNIBBLE_EN,
+    CLCD_ASYNC_FUNCTION_SET_5_LOWNIBBLE_DIS,
+
+    CLCD_ASYNC_DISPLAY_ON_HIGHNIBBLE_EN,
+    CLCD_ASYNC_DISPLAY_ON_HIGHNIBBLE_DIS,
+    CLCD_ASYNC_DISPLAY_ON_LOWNIBBLE_EN,
+    CLCD_ASYNC_DISPLAY_ON_LOWNIBBLE_DIS,
+
+    CLCD_ASYNC_CLEAR_HIGHNIBBLE_EN,
+    CLCD_ASYNC_CLEAR_HIGHNIBBLE_DIS,
+    CLCD_ASYNC_CLEAR_LOWNIBBLE_EN,
+    CLCD_ASYNC_CLEAR_LOWNIBBLE_DIS,
+
+    CLCD_ASYNC_ENTRY_MODE_HIGHNIBBLE_EN,
+    CLCD_ASYNC_ENTRY_MODE_HIGHNIBBLE_DIS,
+    CLCD_ASYNC_ENTRY_MODE_LOWNIBBLE_EN,
+    CLCD_ASYNC_ENTRY_MODE_LOWNIBBLE_DIS,
+
+    CLCD_ASYNC_INIT_DONE
+} CLCD_ASYNC_INIT_State_t;
+
+typedef enum{
+    CLCD_ASYNC_WRITE_HIGHNIBBLE_EN = 0,
+    CLCD_ASYNC_WRITE_HIGHNIBBLE_DIS,
+    CLCD_ASYNC_WRITE_LOWNIBBLE_EN,
+    CLCD_ASYNC_WRITE_LOWNIBBLE_DIS,
+} CLCD_ASYNC_Write_t;
  
 typedef struct
 {
@@ -45,12 +106,17 @@ typedef struct
     GPIO_t dataPins[4];
 } CLCD_t;
 
-STD_ReturnType CLCD_Init();
-STD_ReturnType CLCD_WriteCommand(CLCD_Instance_t clcd, uint8_t command);
-STD_ReturnType CLCD_WriteChar(CLCD_Instance_t clcd, uint8_t data);
-STD_ReturnType CLCD_WriteCharPos(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, uint8_t data);
-STD_ReturnType CLCD_WriteString(CLCD_Instance_t clcd, uint8_t *string);
-STD_ReturnType CLCD_WriteStringPos(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, uint8_t *string);
-STD_ReturnType CLCD_WriteCustomCharacter(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, const uint8_t ch[], uint8_t mem_pos);
+STD_ReturnType CLCD_asyncInit();
+STD_ReturnType CLCD_asyncWriteString(CLCD_Instance_t lcdName, uint8_t* string);
+STD_ReturnType CLCD_asyncWriteStringPos(CLCD_Instance_t lcdName, uint8_t row, uint8_t colomn, uint8_t* string);
+STD_ReturnType CLCD_asyncWriteCommand(CLCD_Instance_t lcdName, uint8_t command);
+
+STD_ReturnType CLCD_syncInit();
+STD_ReturnType CLCD_syncWriteCommand(CLCD_Instance_t clcd, uint8_t command);
+STD_ReturnType CLCD_syncWriteChar(CLCD_Instance_t clcd, uint8_t data);
+STD_ReturnType CLCD_syncWriteCharPos(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, uint8_t data);
+STD_ReturnType CLCD_syncWriteString(CLCD_Instance_t clcd, uint8_t *string);
+STD_ReturnType CLCD_syncWriteStringPos(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, uint8_t *string);
+STD_ReturnType CLCD_syncWriteCustomCharacter(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, const uint8_t ch[], uint8_t mem_pos);
 
 #endif  /* CLCD_H */
