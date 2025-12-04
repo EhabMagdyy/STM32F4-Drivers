@@ -59,6 +59,24 @@ Runnable__t led_toggle = {
     .arg = 0
 };
 
+void SevSeg_Runnable(void* arg){
+    static uint8_t counter = 0;
+    if(counter < 10){
+        SevenSegment_Write(SEVEN_SEGMENT_0, counter++);
+    }
+    else{
+        counter = 0;
+        SevenSegment_Clear(SEVEN_SEGMENT_0);
+    }
+}
+
+Runnable__t sevseg = {
+    .callback = SevSeg_Runnable,
+    .Periodicity = 333,         // 3*333 = 1 second
+    .FirstDelay = 50,
+    .arg = 0
+};
+
 int main(){    
     STD_ReturnType ret = STD_SUCCESS;
     ret = RCC_ConfigureClock(&rcc_pll);
@@ -66,10 +84,12 @@ int main(){
     
     ret = CLCD_asyncInit();
     ret = LED_Init();
+    ret = SevenSegment_Init();
 
     ret = Scheduler_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX, 3);
     ret = Scheduler_RegisterRunnable(&lcd_writer);
     ret = Scheduler_RegisterRunnable(&led_toggle);
+    ret = Scheduler_RegisterRunnable(&sevseg);
     ret = Scheduler_Start();
 
 
