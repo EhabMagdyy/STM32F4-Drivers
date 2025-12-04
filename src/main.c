@@ -6,6 +6,7 @@
 #include "interface/Core/systick.h"
 #include "interface/HAL/clcd.h"
 #include "OS/scheduler.h"
+#include "interface/HAL/led_matrix.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -24,8 +25,16 @@ RCC_CFG_t rcc_hse = {
 void CLCD_WriteRunnable(void* arg){
     static volatile uint8_t toggle = 0;
     if(toggle == 0){
-        CLCD_asyncWriteStringPos(CLCD_0, 1, 3, "Ehab Magdy </>");
+        CLCD_asyncWriteStringPos(CLCD_0, 1, 4, "Ehab");
         toggle = 1;
+    }
+    else if(toggle == 1){
+        CLCD_syncWriteCustomCharacter(CLCD_0, 1, 9, 0);
+        toggle = 2;
+    }
+    else if(toggle == 2){
+        CLCD_asyncWriteStringPos(CLCD_0, 1, 11, "ES46");
+        toggle = 3;
     }
     else{
         CLCD_asyncWriteCommand(CLCD_0, LCD_CLEAR);
