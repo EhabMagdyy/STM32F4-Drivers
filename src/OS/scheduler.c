@@ -37,14 +37,20 @@ STD_ReturnType Scheduler_Start(void){
 
     while(1){
         if(schedStartFlag){
-            counter++;
             for(volatile uint8_t i = 0; i < runnableCount; i++){
-                if((counter%(runnables[i]->Periodicity + runnables[i]->FirstDelay)) == 0){
-                    runnables[i]->callback(&(runnables[i]->arg));
+                if(runnables[i]->FirstDelay > 0){
+                    runnables[i]->FirstDelay--;
+                    if(runnables[i]->FirstDelay == 0){
+                        runnables[i]->callback((void*)&(runnables[i]->arg));
+                    }
+                }
+                else if(counter % (runnables[i]->Periodicity) == 0){
+                    runnables[i]->callback((void*)&(runnables[i]->arg));
                     runnables[i]->FirstDelay = 0;
                 }
             }
             schedStartFlag = 0;
+            counter++;
         }
         else{
             // Do nothing, wait for the scheduler to start
