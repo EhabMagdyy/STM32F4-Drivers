@@ -21,49 +21,57 @@ RCC_CFG_t rcc_hse = {
     .sysClkSource = RCC_CLOCK_SOURCE_HSE,
 };
 
-void sevSegDisplay(void){
-    static uint8_t counter = 0, state = SEVEN_SEGMENT_DOT_OFF;
-    SevenSegment_Write(SEVEN_SEGMENT_0, counter%10);
-    counter++;
-    if(counter == 11){
-        counter = 0;
-        state = !state;
-        SevenSegment_Clear(SEVEN_SEGMENT_0);
+void CLCD_WriteRunnable(void* arg){
+    static volatile uint8_t toggle = 0;
+    if(toggle == 0){
+        CLCD_asyncWriteStringPos(CLCD_0, 1, 3, "Ehab Magdy </>");
+        toggle = 1;
+    }
+    else{
+        CLCD_asyncWriteCommand(CLCD_0, LCD_CLEAR);
+        toggle = 0;
     }
 }
 
-void ToggleLED(void){
-    static uint8_t ledState = LED_LOW;
-    ledState = !ledState;
-    LED_SetState(LED_0, ledState);
+Runnable__t lcd_writer = {
+    .callback = CLCD_WriteRunnable,
+    .Periodicity = 333,     // 3*333 = 1 second
+    .FirstDelay = 50,
+    .arg = 0
+};
+
+void LED_Runnable(void* arg){
+    static uint8_t ledState = 0;
+    if(ledState == 0){
+        LED_SetState(LED_0, LED_HIGH);
+        ledState = 1;
+    }
+    else{
+        LED_SetState(LED_0, LED_LOW);
+        ledState = 0;
+    }
 }
 
-Runnable__t runnable1 = {
-    .callback = ToggleLED,
-    .Periodicity = 100,
-    .FirstDelay = 0,
-    .arg = LED_0
+Runnable__t led_toggle = {
+    .callback = LED_Runnable,
+    .Periodicity = 333,         // 3*333 = 1 second
+    .FirstDelay = 50,
+    .arg = 0
 };
 
 int main(){    
     STD_ReturnType ret = STD_SUCCESS;
     ret = RCC_ConfigureClock(&rcc_pll);
     ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOB | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
-    ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
-
-    //ret = SevenSegment_Init();
-    //ret = LED_Init();
     
-    //ret = Scheduler_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX, 1);
-    //ret = Scheduler_RegisterRunnable(&runnable1);
-    //ret = Scheduler_Start();
+    ret = CLCD_asyncInit();
+    ret = LED_Init();
 
-    CLCD_Init();
-    CLCD_WriteStringPos(CLCD_0, 1, 4, "Ehab");
-    CLCD_WriteCustomCharacter(CLCD_0, 1, 9, (uint8_t[]){0x00,0x11,0x0E,0x15,0x15,0x15,0x15,0x04}, 0);
-    CLCD_WriteStringPos(CLCD_0, 1, 11, "ES46");
+    ret = Scheduler_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX, 3);
+    ret = Scheduler_RegisterRunnable(&lcd_writer);
+    ret = Scheduler_RegisterRunnable(&led_toggle);
+    ret = Scheduler_Start();
 
-    //SYSTICK_PeriodicInterval(250, sevSegDisplay);
 
     while(1){
     }

@@ -10,6 +10,14 @@ static void CLCD_Runnable(void* arg);
 
 extern CLCD_t clcd[CLCD_LEN];
 
+/***
+**
+**
+**********************************  ASYNCHRONOUS FUNCTIONS
+**
+**
+***/
+
 volatile CLCD_ASYNC_State_t clcd_async_state = CLCD_ASYNC_NOACTION;
 volatile CLCD_ASYNC_INIT_State_t clcd_async_init_state = CLCD_ASYNC_NO_ACTION;
 volatile CLCD_ASYNC_Write_t clcd_async_write_data_state = CLCD_ASYNC_WRITE_HIGHNIBBLE_EN;
@@ -120,7 +128,7 @@ STD_ReturnType CLCD_asyncWriteString(CLCD_Instance_t lcdName, uint8_t* string){
     STD_ReturnType ret = STD_SUCCESS;
 
     if(lcdName < CLCD_LEN){
-        if(clcd_async_init_state == CLCD_ASYNC_INIT_DONE){
+        if(clcd_async_init_state == CLCD_ASYNC_INIT_DONE && clcd_async_state == CLCD_ASYNC_NOACTION){
             if(string != NULL){
                 clcd_async_state = CLCD_ASYNC_WRITE_DATA;
                 requestedString = string;
@@ -144,7 +152,7 @@ STD_ReturnType CLCD_asyncWriteStringPos(CLCD_Instance_t lcdName, uint8_t row, ui
     STD_ReturnType ret = STD_SUCCESS;
 
     if(lcdName < CLCD_LEN){
-        if(clcd_async_init_state == CLCD_ASYNC_INIT_DONE){
+        if(clcd_async_init_state == CLCD_ASYNC_INIT_DONE && clcd_async_state == CLCD_ASYNC_NOACTION){
             if(string != NULL){
                 if(lcdName < CLCD_LEN && row <= NUMBER_OF_ROWS && colomn <= NUMBER_OF_COLOMNS){
                     colomn--;
@@ -179,7 +187,7 @@ STD_ReturnType CLCD_asyncWriteCommand(CLCD_Instance_t lcdName, uint8_t command){
     STD_ReturnType ret = STD_SUCCESS;
 
     if(lcdName < CLCD_LEN){
-        if(clcd_async_init_state == CLCD_ASYNC_INIT_DONE){
+        if(clcd_async_init_state == CLCD_ASYNC_INIT_DONE && clcd_async_state == CLCD_ASYNC_NOACTION){
             clcd_async_state = CLCD_ASYNC_WRITE_COMMAND;
             requestedCommand = command;
         }
@@ -194,6 +202,49 @@ STD_ReturnType CLCD_asyncWriteCommand(CLCD_Instance_t lcdName, uint8_t command){
     return ret;
 }
 
+STD_ReturnType CLCD_asyncSaveCustomCharacter(CLCD_Instance_t lcdName, uint8_t* ch, uint8_t mem_pos){
+    STD_ReturnType ret = STD_SUCCESS;
+
+    if(lcdName < CLCD_LEN){
+        if(clcd_async_init_state == CLCD_ASYNC_INIT_DONE && clcd_async_state == CLCD_ASYNC_NOACTION){
+            if(ch != NULL){
+                requestedString = ch;
+                requestedCommand = LCD_CGRAM_START + (mem_pos * 8);
+                clcd_async_state = CLCD_ASYNC_SAVE_CUSTOM_CHARACTER;
+            }
+            else{
+                ret = STD_ERROR;
+            }
+        }
+        else{
+            ret = STD_ERROR;
+        }
+    }
+    else{ 
+        ret = STD_ERROR;
+    }
+
+    return ret;
+}
+
+STD_ReturnType CLCD_asyncWriteCustomCharacter(CLCD_Instance_t lcdName, uint8_t row, uint8_t colomn, uint8_t mem_pos){
+    STD_ReturnType ret = STD_SUCCESS;
+
+	if(lcdName < CLCD_LEN){
+        ret = CLCD_asyncWriteStringPos(lcdName, row, colomn, (uint8_t*)&mem_pos);
+	}
+	else{ 
+        ret = STD_ERROR;
+    }
+
+    return ret;
+}
+
+static void CLCD_asyncWrite4bitEn(CLCD_Instance_t lcdName, uint8_t data){
+    CLCD_syncWrite4bit(CLCD_0, data);
+    CLCD_asyncEnableSignal(CLCD_0);
+}
+
 static void CLCD_Runnable(void* arg){
     switch(clcd_async_state){
         case CLCD_ASYNC_NOACTION:
@@ -202,93 +253,81 @@ static void CLCD_Runnable(void* arg){
 
         case CLCD_ASYNC_INIT:
             switch(clcd_async_init_state++){
+                // Function Set - 8 bit mode
                 case CLCD_ASYNC_FUNCTION_SET_1_HIGHNIBBLE_EN:
                     GPIO_WritePin(&clcd[CLCD_0].rsPin, GPIO_PIN_RESET);
-                    CLCD_syncWrite4bit(CLCD_0, LCD_8BIT_MODE >> 4);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_8BIT_MODE >> 4);
                     break;
                 case CLCD_ASYNC_FUNCTION_SET_1_HIGHNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
                 case CLCD_ASYNC_FUNCTION_SET_1_LOWNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_8BIT_MODE & 0x0F);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_8BIT_MODE & 0x0F);
                     break;
                 case CLCD_ASYNC_FUNCTION_SET_1_LOWNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
-                
+                // Function Set - 8 bit mode
                 case CLCD_ASYNC_FUNCTION_SET_2_HIGHNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_8BIT_MODE >> 4);
-                    CLCD_syncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_8BIT_MODE >> 4);
                     break;
                 case CLCD_ASYNC_FUNCTION_SET_2_HIGHNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
                 case CLCD_ASYNC_FUNCTION_SET_2_LOWNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_8BIT_MODE & 0x0F);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_8BIT_MODE & 0x0F);
                     break;
                 case CLCD_ASYNC_FUNCTION_SET_2_LOWNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
-
+                // Function Set - 8 bit mode
                 case CLCD_ASYNC_FUNCTION_SET_3_HIGHNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_8BIT_MODE >> 4);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_8BIT_MODE >> 4);
                     break;
                 case CLCD_ASYNC_FUNCTION_SET_3_HIGHNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
                 case CLCD_ASYNC_FUNCTION_SET_3_LOWNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_8BIT_MODE & 0x0F);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_8BIT_MODE & 0x0F);
+                    break;
                     break;
                 case CLCD_ASYNC_FUNCTION_SET_3_LOWNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break; 
-
+                // Function Set - 4 bit mode
                 case CLCD_ASYNC_FUNCTION_SET_4_HIGHNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_4BIT_MODE >> 4);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_4BIT_MODE >> 4);
                     break;
                 case CLCD_ASYNC_FUNCTION_SET_4_HIGHNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
                 case CLCD_ASYNC_FUNCTION_SET_4_LOWNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_4BIT_MODE & 0x0F);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_4BIT_MODE & 0x0F);
+                    break;
                     break;
                 case CLCD_ASYNC_FUNCTION_SET_4_LOWNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
                     break;
-
+                // Function Set - 4 bit mode - Two Lines
                 case CLCD_ASYNC_FUNCTION_SET_5_HIGHNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_4BIT_MODE_2LINES >> 4);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_4BIT_MODE_2LINES >> 4);
                     break;
                 case CLCD_ASYNC_FUNCTION_SET_5_HIGHNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
                 case CLCD_ASYNC_FUNCTION_SET_5_LOWNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_4BIT_MODE_2LINES & 0x0F);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_4BIT_MODE_2LINES & 0x0F);
+                    break;
                     break;
                 case CLCD_ASYNC_FUNCTION_SET_5_LOWNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
-
+                // Display ON
                 case CLCD_ASYNC_DISPLAY_ON_HIGHNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_DISPLAY_ON_UNDERLINE_OFF_CURSOR_OFF >> 4);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_DISPLAY_ON_UNDERLINE_OFF_CURSOR_OFF >> 4);
                     break;
                 case CLCD_ASYNC_DISPLAY_ON_HIGHNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
                 case CLCD_ASYNC_DISPLAY_ON_LOWNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_DISPLAY_ON_UNDERLINE_OFF_CURSOR_OFF & 0x0F);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_DISPLAY_ON_UNDERLINE_OFF_CURSOR_OFF & 0x0F);
                     break;
                 case CLCD_ASYNC_DISPLAY_ON_LOWNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
-
+                // Clear Display
                 case CLCD_ASYNC_CLEAR_HIGHNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_CLEAR >> 4);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_CLEAR >> 4);
                     break;
                 case CLCD_ASYNC_CLEAR_HIGHNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
                 case CLCD_ASYNC_CLEAR_LOWNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_CLEAR & 0x0F);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_CLEAR & 0x0F);
                     break;
                 case CLCD_ASYNC_CLEAR_LOWNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
-
+                // Entry Mode
                 case CLCD_ASYNC_ENTRY_MODE_HIGHNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_INCREMENT_SHIFT_OFF >> 4);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_INCREMENT_SHIFT_OFF >> 4);
                     break;
                 case CLCD_ASYNC_ENTRY_MODE_HIGHNIBBLE_DIS: CLCD_asyncDisableSignal(CLCD_0); break;
                 case CLCD_ASYNC_ENTRY_MODE_LOWNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, LCD_INCREMENT_SHIFT_OFF & 0x0F);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, LCD_INCREMENT_SHIFT_OFF & 0x0F);
                     break;
                 case CLCD_ASYNC_ENTRY_MODE_LOWNIBBLE_DIS:
                     CLCD_asyncDisableSignal(CLCD_0);
@@ -306,15 +345,13 @@ static void CLCD_Runnable(void* arg){
                 switch(clcd_async_write_data_state++){
                     case CLCD_ASYNC_WRITE_HIGHNIBBLE_EN:
                         GPIO_WritePin(&clcd[CLCD_0].rsPin, GPIO_PIN_SET);       // Send Data
-                        CLCD_syncWrite4bit(CLCD_0, (*requestedString) >> 4);
-                        CLCD_asyncEnableSignal(CLCD_0);
+                        CLCD_asyncWrite4bitEn(CLCD_0, (*requestedString) >> 4);
                         break;
                     case CLCD_ASYNC_WRITE_HIGHNIBBLE_DIS:
                         CLCD_asyncDisableSignal(CLCD_0);
                         break;
                     case CLCD_ASYNC_WRITE_LOWNIBBLE_EN:
-                        CLCD_syncWrite4bit(CLCD_0, (*requestedString) & 0x0F);
-                        CLCD_asyncEnableSignal(CLCD_0);
+                        CLCD_asyncWrite4bitEn(CLCD_0, (*requestedString) & 0x0F);
                         break;
                     case CLCD_ASYNC_WRITE_LOWNIBBLE_DIS:
                         CLCD_asyncDisableSignal(CLCD_0);
@@ -339,15 +376,13 @@ static void CLCD_Runnable(void* arg){
             switch(clcd_async_write_command_state++){
                 case CLCD_ASYNC_WRITE_HIGHNIBBLE_EN:
                     GPIO_WritePin(&clcd[CLCD_0].rsPin, GPIO_PIN_RESET);       // Send Command
-                    CLCD_syncWrite4bit(CLCD_0, requestedCommand >> 4);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, (*requestedString) >> 4);
                     break;
                 case CLCD_ASYNC_WRITE_HIGHNIBBLE_DIS:
                     CLCD_asyncDisableSignal(CLCD_0);
                     break;
                 case CLCD_ASYNC_WRITE_LOWNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, requestedCommand & 0x0F);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, requestedCommand & 0x0F);
                     break;
                 case CLCD_ASYNC_WRITE_LOWNIBBLE_DIS:
                     CLCD_asyncDisableSignal(CLCD_0);
@@ -365,15 +400,13 @@ static void CLCD_Runnable(void* arg){
             switch(clcd_async_write_command_state++){
                 case CLCD_ASYNC_WRITE_HIGHNIBBLE_EN:
                     GPIO_WritePin(&clcd[CLCD_0].rsPin, GPIO_PIN_RESET);       // Send Command
-                    CLCD_syncWrite4bit(CLCD_0, requestedCommand >> 4);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, requestedCommand >> 4);
                     break;
                 case CLCD_ASYNC_WRITE_HIGHNIBBLE_DIS:
                     CLCD_asyncDisableSignal(CLCD_0);
                     break;
                 case CLCD_ASYNC_WRITE_LOWNIBBLE_EN:
-                    CLCD_syncWrite4bit(CLCD_0, requestedCommand & 0x0F);
-                    CLCD_asyncEnableSignal(CLCD_0);
+                    CLCD_asyncWrite4bitEn(CLCD_0, requestedCommand & 0x0F);
                     break;
                 case CLCD_ASYNC_WRITE_LOWNIBBLE_DIS:
                     CLCD_asyncDisableSignal(CLCD_0);
@@ -387,12 +420,44 @@ static void CLCD_Runnable(void* arg){
                 }
             break;
 
+        case CLCD_ASYNC_SAVE_CUSTOM_CHARACTER:
+            switch(clcd_async_write_command_state++){
+                case CLCD_ASYNC_WRITE_HIGHNIBBLE_EN:
+                    GPIO_WritePin(&clcd[CLCD_0].rsPin, GPIO_PIN_RESET);       // Send Command
+                    CLCD_asyncWrite4bitEn(CLCD_0, requestedCommand >> 4);
+                    break;
+                case CLCD_ASYNC_WRITE_HIGHNIBBLE_DIS:
+                    CLCD_asyncDisableSignal(CLCD_0);
+                    break;
+                case CLCD_ASYNC_WRITE_LOWNIBBLE_EN:
+                    CLCD_asyncWrite4bitEn(CLCD_0, requestedCommand & 0x0F);
+                    break;
+                case CLCD_ASYNC_WRITE_LOWNIBBLE_DIS:
+                    CLCD_asyncDisableSignal(CLCD_0);
+                    clcd_async_write_command_state = CLCD_ASYNC_WRITE_HIGHNIBBLE_EN;
+                    clcd_async_state = CLCD_ASYNC_WRITE_DATA;
+                    break;
+
+                default:
+                    clcd_async_write_command_state = CLCD_ASYNC_WRITE_HIGHNIBBLE_EN;
+                    break;
+                }
+            break;
+            
         default:
             // Invalid state, reset to NOACTION
             clcd_async_state = CLCD_ASYNC_NOACTION;
             break;
     }
 }
+
+/***
+**
+**
+**********************************  SYNCHRONOUS FUNCTIONS
+**
+**
+***/
 
 STD_ReturnType CLCD_syncInit(void){
     STD_ReturnType ret = STD_SUCCESS;
@@ -552,8 +617,7 @@ STD_ReturnType CLCD_syncWriteStringPos(CLCD_Instance_t lcdName, uint8_t row, uin
     return ret;
 }
 
-STD_ReturnType CLCD_syncWriteCustomCharacter(CLCD_Instance_t lcdName, uint8_t row, uint8_t colomn,
-                                                const uint8_t ch[], uint8_t mem_pos){
+STD_ReturnType CLCD_syncSaveCustomCharacter(CLCD_Instance_t lcdName, const uint8_t ch[], uint8_t mem_pos){
     STD_ReturnType ret = STD_SUCCESS;
 
 	if(lcdName < CLCD_LEN){
@@ -561,6 +625,18 @@ STD_ReturnType CLCD_syncWriteCustomCharacter(CLCD_Instance_t lcdName, uint8_t ro
         for(uint8_t char_index = 0 ; char_index < 8 ; char_index++){
         	ret = CLCD_syncWriteChar(lcdName, ch[char_index]);
         }
+	}
+	else{ 
+        ret = STD_ERROR;
+    }
+
+    return ret;
+}
+
+STD_ReturnType CLCD_syncWriteCustomCharacter(CLCD_Instance_t lcdName, uint8_t row, uint8_t colomn, uint8_t mem_pos){
+    STD_ReturnType ret = STD_SUCCESS;
+
+	if(lcdName < CLCD_LEN){
         ret = CLCD_syncWriteCharPos(lcdName, row, colomn, mem_pos);
 	}
 	else{ 

@@ -42,7 +42,9 @@ typedef enum{
     CLCD_ASYNC_INIT,
     CLCD_ASYNC_WRITE_DATA,
     CLCD_ASYNC_WRITE_COMMAND,
-    CLCD_ASYNC_WRITE_DATA_POS
+    CLCD_ASYNC_WRITE_DATA_POS,
+    CLCD_ASYNC_SAVE_CUSTOM_CHARACTER,
+    CLCD_ASYNC_WRITE_CUSTOM_CHARACTER
 } CLCD_ASYNC_State_t;
 
 typedef enum{
@@ -110,6 +112,8 @@ STD_ReturnType CLCD_asyncInit();
 STD_ReturnType CLCD_asyncWriteString(CLCD_Instance_t lcdName, uint8_t* string);
 STD_ReturnType CLCD_asyncWriteStringPos(CLCD_Instance_t lcdName, uint8_t row, uint8_t colomn, uint8_t* string);
 STD_ReturnType CLCD_asyncWriteCommand(CLCD_Instance_t lcdName, uint8_t command);
+STD_ReturnType CLCD_asyncSaveCustomCharacter(CLCD_Instance_t lcdName, uint8_t* ch, uint8_t mem_pos);
+STD_ReturnType CLCD_asyncWriteCustomCharacter(CLCD_Instance_t lcdName, uint8_t row, uint8_t colomn, uint8_t mem_pos);
 
 STD_ReturnType CLCD_syncInit();
 STD_ReturnType CLCD_syncWriteCommand(CLCD_Instance_t clcd, uint8_t command);
@@ -117,6 +121,7 @@ STD_ReturnType CLCD_syncWriteChar(CLCD_Instance_t clcd, uint8_t data);
 STD_ReturnType CLCD_syncWriteCharPos(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, uint8_t data);
 STD_ReturnType CLCD_syncWriteString(CLCD_Instance_t clcd, uint8_t *string);
 STD_ReturnType CLCD_syncWriteStringPos(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, uint8_t *string);
-STD_ReturnType CLCD_syncWriteCustomCharacter(CLCD_Instance_t clcd, uint8_t row, uint8_t colomn, const uint8_t ch[], uint8_t mem_pos);
+STD_ReturnType CLCD_syncSaveCustomCharacter(CLCD_Instance_t lcdName, const uint8_t ch[], uint8_t mem_pos);
+STD_ReturnType CLCD_syncWriteCustomCharacter(CLCD_Instance_t lcdName, uint8_t row, uint8_t colomn, uint8_t mem_pos);
 
 #endif  /* CLCD_H */
