@@ -25,16 +25,28 @@ RCC_CFG_t rcc_hse = {
 void CLCD_WriteRunnable(void* arg){
     static volatile uint8_t toggle = 0;
     if(toggle == 0){
-        CLCD_asyncWriteStringPos(CLCD_0, 1, 4, "Ehab");
-        toggle = 1;
+        CLCD_asyncWriteStringPos(CLCD_0, 1, 3, "Ehab");
+        toggle = 2;
     }
     else if(toggle == 1){
-        CLCD_syncWriteCustomCharacter(CLCD_0, 1, 9, 0);
+        //CLCD_asyncSaveCustomCharacter(CLCD_0, (uint8_t[]){0x00,0x11,0x0E,0x15,0x15,0x15,0x15,0x04}, 0);
         toggle = 2;
     }
     else if(toggle == 2){
+        CLCD_asyncWriteCustomCharacter(CLCD_0, 1, 8, 0);
+        toggle = 4;
+    }
+    else if(toggle == 3){
+        //CLCD_asyncSaveCustomCharacter(CLCD_0, (uint8_t[]){0x15,0x15,0x1B,0x15,0x1B,0x0E,0x04,0x1F}, 1);
+        toggle = 4;
+    }
+    else if(toggle == 4){
+        CLCD_asyncWriteCustomCharacter(CLCD_0, 1, 9, 1);
+        toggle = 5;
+    }
+    else if(toggle == 5){
         CLCD_asyncWriteStringPos(CLCD_0, 1, 11, "ES46");
-        toggle = 3;
+        toggle = 6;
     }
     else{
         CLCD_asyncWriteCommand(CLCD_0, LCD_CLEAR);
@@ -44,8 +56,8 @@ void CLCD_WriteRunnable(void* arg){
 
 Runnable__t lcd_writer = {
     .callback = CLCD_WriteRunnable,
-    .Periodicity = 333,     // 3*333 = 1 second
-    .FirstDelay = 50,
+    .Periodicity = 1000,
+    .FirstDelay = 150,
     .arg = 0
 };
 
@@ -63,8 +75,8 @@ void LED_Runnable(void* arg){
 
 Runnable__t led_toggle = {
     .callback = LED_Runnable,
-    .Periodicity = 333,         // 3*333 = 1 second
-    .FirstDelay = 50,
+    .Periodicity = 1000,
+    .FirstDelay = 150,
     .arg = 0
 };
 
@@ -81,8 +93,8 @@ void SevSeg_Runnable(void* arg){
 
 Runnable__t sevseg = {
     .callback = SevSeg_Runnable,
-    .Periodicity = 333,         // 3*333 = 1 second
-    .FirstDelay = 50,
+    .Periodicity = 1000,
+    .FirstDelay = 150,
     .arg = 0
 };
 
@@ -93,9 +105,9 @@ int main(){
     
     ret = CLCD_asyncInit();
     ret = LED_Init();
-    ret = SevenSegment_Init();
+    //ret = SevenSegment_Init();
 
-    ret = Scheduler_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX, 3);
+    ret = Scheduler_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX, 1);
     ret = Scheduler_RegisterRunnable(&lcd_writer);
     ret = Scheduler_RegisterRunnable(&led_toggle);
     ret = Scheduler_RegisterRunnable(&sevseg);

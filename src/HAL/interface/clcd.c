@@ -23,16 +23,19 @@ volatile CLCD_ASYNC_INIT_State_t clcd_async_init_state[CLCD_LEN] = {CLCD_ASYNC_N
 volatile CLCD_ASYNC_Write_t clcd_async_write_data_state[CLCD_LEN] = {CLCD_ASYNC_WRITE_HIGHNIBBLE_EN};
 volatile CLCD_ASYNC_Write_t clcd_async_write_command_state[CLCD_LEN] = {CLCD_ASYNC_WRITE_HIGHNIBBLE_EN};
 volatile uint8_t* requestedString[CLCD_LEN] = {NULL};
+volatile uint8_t requestedStringSize[CLCD_LEN] = {0};
 volatile uint8_t requestedCommand[CLCD_LEN] = {0};
+
+volatile uint8_t memPos = 0;
 
 // Custom Character
 volatile uint8_t requestedCustomCharacter[8] = {0};
 
 static Runnable__t CLCD_RunnableObj = {
     .callback = CLCD_Runnable,
-    .Periodicity = 1,   // 1*3 = 3 ms
-    .FirstDelay = 12,   // 12*3 = 36 ms
-    .arg = 0
+    .Periodicity = 3,   // 3ms
+    .FirstDelay = 40,   // 40ms
+    .arg = CLCD_0
 };
 
 STD_ReturnType CLCD_asyncInit(void){
@@ -135,6 +138,7 @@ STD_ReturnType CLCD_asyncWriteString(CLCD_Instance_t lcdName, uint8_t* string){
             if(string != NULL){
                 clcd_async_state[lcdName] = CLCD_ASYNC_WRITE_DATA;
                 requestedString[lcdName] = string;
+                requestedStringSize[lcdName] = strlen((char*)string);
             }
             else{
                 ret = STD_ERROR;
@@ -170,6 +174,7 @@ STD_ReturnType CLCD_asyncWriteStringPos(CLCD_Instance_t lcdName, uint8_t row, ui
                 }
                 clcd_async_state[lcdName] = CLCD_ASYNC_WRITE_DATA_POS;
                 requestedString[lcdName] = string;
+                requestedStringSize[lcdName] = strlen((char*)string);
             }
             else{
                 ret = STD_ERROR;
@@ -235,10 +240,29 @@ STD_ReturnType CLCD_asyncSaveCustomCharacter(CLCD_Instance_t lcdName, uint8_t* c
 STD_ReturnType CLCD_asyncWriteCustomCharacter(CLCD_Instance_t lcdName, uint8_t row, uint8_t colomn, uint8_t mem_pos){
     STD_ReturnType ret = STD_SUCCESS;
 
-	if(lcdName < CLCD_LEN){
-        ret = CLCD_asyncWriteStringPos(lcdName, row, colomn, (uint8_t*)&mem_pos);
-	}
-	else{ 
+    if(lcdName < CLCD_LEN){
+        if(clcd_async_init_state[lcdName] == CLCD_ASYNC_INIT_DONE && clcd_async_state[lcdName] == CLCD_ASYNC_NOACTION){
+            if(lcdName < CLCD_LEN && row <= NUMBER_OF_ROWS && colomn <= NUMBER_OF_COLOMNS){
+                colomn--;
+                switch(row){
+                    case ROW1: requestedCommand[lcdName] = 0x80 + colomn;  break;
+                    case ROW2: requestedCommand[lcdName] = 0xc0 + colomn;  break;
+                    default:                                      break;
+                }
+            }
+            else{
+                ret = STD_ERROR;
+            }
+            clcd_async_state[lcdName] = CLCD_ASYNC_WRITE_DATA_POS;
+            requestedString[lcdName] = &memPos;
+            *requestedString[lcdName] = mem_pos;
+            requestedStringSize[lcdName] = 1;
+        }
+        else{ 
+            ret = STD_ERROR;
+        }
+    }
+    else{ 
         ret = STD_ERROR;
     }
 
@@ -362,8 +386,10 @@ static void CLCD_Runnable(void* arg){
                     case CLCD_ASYNC_WRITE_LOWNIBBLE_DIS:
                         CLCD_asyncDisableSignal(lcdName);
                         requestedString[lcdName]++;
-                        if(*requestedString[lcdName] == '\0'){
+                        requestedStringSize[lcdName]--;
+                        if(requestedStringSize[lcdName] == 0){
                             clcd_async_state[lcdName] = CLCD_ASYNC_NOACTION;
+                            requestedString[lcdName] = NULL;
                         }
                         clcd_async_write_data_state[lcdName] = CLCD_ASYNC_WRITE_HIGHNIBBLE_EN;
                         break;
@@ -443,6 +469,7 @@ static void CLCD_Runnable(void* arg){
                     clcd_async_write_command_state[lcdName] = CLCD_ASYNC_WRITE_HIGHNIBBLE_EN;
                     clcd_async_state[lcdName] = CLCD_ASYNC_WRITE_DATA;
                     requestedString[lcdName] = (uint8_t*)requestedCustomCharacter;
+                    requestedStringSize[lcdName] = 8;
                     break;
 
                 default:
