@@ -7,6 +7,7 @@
 #include "interface/HAL/clcd.h"
 #include "OS/scheduler.h"
 #include "interface/HAL/led_matrix.h"
+#include "interface/HAL/keypad.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -26,18 +27,18 @@ void CLCD_WriteRunnable(void* arg){
     static volatile uint8_t toggle = 0;
     if(toggle == 0){
         CLCD_asyncWriteStringPos(CLCD_0, 1, 3, "Ehab");
-        toggle = 2;
+        toggle = 1;
     }
     else if(toggle == 1){
-        //CLCD_asyncSaveCustomCharacter(CLCD_0, (uint8_t[]){0x00,0x11,0x0E,0x15,0x15,0x15,0x15,0x04}, 0);
+        CLCD_asyncSaveCustomCharacter(CLCD_0, (uint8_t[]){0x00,0x11,0x0E,0x15,0x15,0x15,0x15,0x04}, 0);
         toggle = 2;
     }
     else if(toggle == 2){
         CLCD_asyncWriteCustomCharacter(CLCD_0, 1, 8, 0);
-        toggle = 4;
+        toggle = 3;
     }
     else if(toggle == 3){
-        //CLCD_asyncSaveCustomCharacter(CLCD_0, (uint8_t[]){0x15,0x15,0x1B,0x15,0x1B,0x0E,0x04,0x1F}, 1);
+        CLCD_asyncSaveCustomCharacter(CLCD_0, (uint8_t[]){0x15,0x15,0x1B,0x15,0x1B,0x0E,0x04,0x1F}, 1);
         toggle = 4;
     }
     else if(toggle == 4){
@@ -63,38 +64,30 @@ Runnable__t lcd_writer = {
 
 void LED_Runnable(void* arg){
     static uint8_t ledState = 0;
-    if(ledState == 0){
-        LED_SetState(LED_0, LED_HIGH);
-        ledState = 1;
-    }
-    else{
-        LED_SetState(LED_0, LED_LOW);
-        ledState = 0;
-    }
 }
 
 Runnable__t led_toggle = {
     .callback = LED_Runnable,
-    .Periodicity = 1000,
-    .FirstDelay = 150,
+    .Periodicity = 100,
+    .FirstDelay = 100,
     .arg = 0
 };
 
 void SevSeg_Runnable(void* arg){
-    static uint8_t counter = 0;
-    if(counter < 10){
-        SevenSegment_Write(SEVEN_SEGMENT_0, counter++);
+    static uint8_t key = 0;
+    keypad_GetKey(&key);
+    if('0' <= key && key <= '9'){
+        SevenSegment_Write(SEVEN_SEGMENT_0, key - '0');
     }
     else{
-        counter = 0;
         SevenSegment_Clear(SEVEN_SEGMENT_0);
     }
 }
 
 Runnable__t sevseg = {
     .callback = SevSeg_Runnable,
-    .Periodicity = 1000,
-    .FirstDelay = 150,
+    .Periodicity = 100,
+    .FirstDelay = 10,
     .arg = 0
 };
 
@@ -103,18 +96,22 @@ int main(){
     ret = RCC_ConfigureClock(&rcc_pll);
     ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOB | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
     
-    ret = CLCD_asyncInit();
-    ret = LED_Init();
-    //ret = SevenSegment_Init();
+    //ret = CLCD_asyncInit();
+    //ret = LED_Init();
+    ret = SevenSegment_Init();
 
     ret = Scheduler_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX, 1);
-    ret = Scheduler_RegisterRunnable(&lcd_writer);
-    ret = Scheduler_RegisterRunnable(&led_toggle);
+    ret = keypad_Init();
+    //ret = Scheduler_RegisterRunnable(&lcd_writer);
+    //ret = Scheduler_RegisterRunnable(&led_toggle);
     ret = Scheduler_RegisterRunnable(&sevseg);
     ret = Scheduler_Start();
 
+    uint8_t key = 0;
+
 
     while(1){
+        
     }
     
     return 0;
