@@ -14,5 +14,6 @@ keypad_t Keypad[KEYPAD_LEN] = {
         {.port = GPIO_PORTA, .pin = GPIO_PIN_5, .mode = GPIO_MODE_INPUT, .pullType = GPIO_PULLDOWN}, // Column 1
         {.port = GPIO_PORTA, .pin = GPIO_PIN_6, .mode = GPIO_MODE_INPUT, .pullType = GPIO_PULLDOWN}, // Column 2
         {.port = GPIO_PORTA, .pin = GPIO_PIN_7, .mode = GPIO_MODE_INPUT, .pullType = GPIO_PULLDOWN}  // Column 3
-    }
+    },
+    [KEYPAD_0].pullType = KEYPAD_PULLDOWN
 };

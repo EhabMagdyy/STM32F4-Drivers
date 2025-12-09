@@ -8,9 +8,16 @@
 #define KEYPAD_ROWS     4
 #define KEYPAD_COLOUMNS 4
 
+typedef enum {
+    KEYPAD_PULLUP,
+    KEYPAD_PULLDOWN,
+    KEYPAD_NOPULL
+} keypad_pull_t;
+
 typedef struct{
 	GPIO_t rowPins[KEYPAD_ROWS];
     GPIO_t colPins[KEYPAD_COLOUMNS];
+    keypad_pull_t pullType;
 }keypad_t;
 
 STD_ReturnType keypad_Init();
