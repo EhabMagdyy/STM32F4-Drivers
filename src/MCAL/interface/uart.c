@@ -1,11 +1,10 @@
 #include "interface/MCAL/uart.h"
 
-volatile uint8_t txBuffer[3][100] ={0};
-volatile uint8_t rxBuffer[3][100] ={0};
-volatile uint8_t* requestedTxBuffer[3] ={NULL};
-volatile uint32_t requestedTxLength[3] ={0};
-volatile uint8_t* requestedRxBuffer[3] ={NULL};
-volatile uint32_t requestedRxLength[3] ={0};
+volatile uint8_t txBuffer[3][100] = {0};
+volatile uint8_t* requestedTxBuffer[3] = {NULL};
+volatile uint32_t requestedTxLength[3] = {0};
+volatile uint8_t* requestedRxBuffer[3] = {NULL};
+volatile uint32_t requestedRxLength[3] = {0};
 
 CBFunc_t txCallback[3] ={NULL};
 CBFunc_t rxCallback[3] ={NULL};
@@ -277,7 +276,7 @@ STD_ReturnType UART_ReceiveCharIT(const UART_Config_t* uartObj, uint8_t* data){
             ret = STD_ERROR;
         }
         else{
-            //requestedRxBuffer[uartNum] = data;
+            requestedRxBuffer[uartNum] = data;
             requestedRxLength[uartNum] = 1;
             // Enable RXNE interrupt
             uartObj->UartInstance->CR1 |=(1 << 5);
@@ -303,7 +302,7 @@ STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, uint8_t* data,
                 return STD_BUSY;
             }
             else{
-                //requestedRxBuffer[uartNum] = data;
+                requestedRxBuffer[uartNum] = data;
                 requestedRxLength[uartNum] = length;
                 uartObj->UartInstance->CR1 |=(1 << 5); // enable RXNEIE
             }
@@ -332,12 +331,15 @@ void USART1_IRQHandler(void){
     // RXNE handling
     if(UART1->SR &(1 << 5)){
         int8_t uartNum = 0;
+        static uint8_t counter = 0;
         uint8_t data =(uint8_t)(UART1->DR & 0xFF);
-        if(requestedRxLength[uartNum] > 0 && requestedRxBuffer[uartNum] != NULL){
+        requestedRxBuffer[uartNum][counter++] = data;
+        if(requestedRxLength[uartNum] > 0){
             *(requestedRxBuffer[uartNum]++) = data;
             requestedRxLength[uartNum]--;
         }
         if(requestedRxLength[uartNum] == 0){
+            counter = 0;
             UART1->CR1 &= ~(1 << 5);
             requestedRxBuffer[uartNum] = NULL;
             if(rxCallback[uartNum] != NULL){

@@ -13,7 +13,8 @@ typedef double              float64_t;
 typedef enum {
     STD_ERROR = 0,
     STD_SUCCESS = 1,
-    STD_TIMEOUT = 2
+    STD_TIMEOUT = 2,
+    STD_BUSY = 3
 } STD_ReturnType;
 
 #define NULL        (void *)0

@@ -4,5 +4,5 @@
 #include "interface/MCAL/gpio.h"
 
 const LED_Config_t LEDS[LED_LEN] = {
-    [LED_0] = { .port = GPIO_PORTB, .pin = GPIO_PIN_0, .activeState = LED_ACTIVE_HIGH, .isPP = 1 },
+    [LED_0] = { .port = GPIO_PORTA, .pin = GPIO_PIN_0, .activeState = LED_ACTIVE_HIGH, .isPP = 1 },
 };

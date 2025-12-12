@@ -7,7 +7,7 @@
 #include "interface/HAL/clcd.h"
 #include "OS/scheduler.h"
 #include "interface/HAL/led_matrix.h"
-#include <stdlib.h>
+#include "interface/MCAL/uart.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -15,116 +15,68 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
-// Stickman frame 0 (standing)
-uint8_t man_frame0[8] = {
-    0x04,
-    0x0E,
-    0x04,
-    0x0A,
-    0x11,
-    0x04,
-    0x0A,
-    0x11
+GPIO_t uart1_tx_pin = {
+    .port       = GPIO_PORTA,
+    .pin        = GPIO_PIN_9,
+    .mode       = GPIO_MODE_AF,
+    .outputType = GPIO_OUTPUT_PUSHPULL,
+    .speed      = GPIO_SPEED_HIGH,
+    .pullType   = GPIO_NOPULL,
+    .altFunc    = GPIO_AF7_USART1_2
 };
 
-// Stickman frame 1 (walking)
-uint8_t man_frame1[8] = {
-    0x04,
-    0x0E,
-    0x04,
-    0x0A,
-    0x04,
-    0x11,
-    0x04,
-    0x0A
+GPIO_t uart1_rx_pin = {
+    .port       = GPIO_PORTA,
+    .pin        = GPIO_PIN_10,
+    .mode       = GPIO_MODE_AF,
+    .outputType = GPIO_OUTPUT_PUSHPULL,
+    .speed      = GPIO_SPEED_HIGH,
+    .pullType   = GPIO_NOPULL,
+    .altFunc    = GPIO_AF7_USART1_2
 };
 
-uint8_t tree[8] = {
-  0x0E,
-  0x1F,
-  0x1F,
-  0x1F,
-  0x0E,
-  0x04,
-  0x04,
-  0x00
+volatile uint8_t data[10] = {0};
+
+void UART_RxCallback(void);
+
+UART_Config_t uart1_config = {
+    .UartInstance = UART1,
+    .BaudRate = UART_BAUDRATE_115200,
+    .DataBits = UART_DATABITS_8,
+    .Parity = UART_PARITY_NONE,
+    .txCallback = NULL,
+    .rxCallback = UART_RxCallback
 };
 
-int x = 9;
-
-void CLCD_WriteRunnable(void* arg){
-    CLCD_Instance_t lcdID = *(CLCD_Instance_t*)arg;
-    static volatile uint8_t state = 0;
-    static volatile uint8_t col = 1;
-    static volatile uint8_t row = 2;
-
-    switch(state){
-        case 0:
-            CLCD_asyncSaveCustomCharacter(lcdID, man_frame0, 0);
-            state = 1;
-            break;
-        case 1:
-            CLCD_asyncSaveCustomCharacter(lcdID, man_frame1, 1);
-            state = 2;
-            break;
-        case 2:
-            CLCD_asyncSaveCustomCharacter(lcdID, tree, 2);
-            state = 3;
-            break;
-        case 3: 
-            CLCD_asyncWriteCustomCharacter(lcdID, 2, x, 2);
-            state = 4;
-            break;
-        case 4:
-            // Clear previous position
-            CLCD_asyncWriteStringPos(lcdID, row, col, " ");
-            if(col < 16){
-                col++;
-            }
-            else{
-                x = 3 + rand() % (13 - 3 + 1);
-                col = 1;
-                state = 7;
-                break;
-            }
-            if(col == x) row = 1;
-            else row = 2;
-            state = 5;
-            break;
-        case 5: CLCD_asyncWriteCustomCharacter(lcdID, row, col, 0);
-            state = 6;
-            break;
-        case 6: CLCD_asyncWriteCustomCharacter(lcdID, row, col, 1);
-            state = 3;
-            break;
-        case 7:
-            CLCD_asyncWriteCommand(lcdID, LCD_CLEAR);
-            state = 3;
-            break;
-        default: state = 2; break;
+void UART_RxCallback(void){
+    if(data[0] == 'D'){
+        UART_SendBufferIT(&uart1_config, (uint8_t*)"Ack\0", 4);
     }
 }
 
-Runnable__t lcd_writer = {
-    .callback = CLCD_WriteRunnable,
-    .Periodicity = 50,
-    .FirstDelay = 150,
-    .arg = 0
-};
+int main(){
 
-int main(){    
-    STD_ReturnType ret = STD_SUCCESS;
+    volatile STD_ReturnType ret = STD_SUCCESS;
     ret = RCC_ConfigureClock(&rcc_pll);
-    ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOB | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
+    if(ret == STD_SUCCESS){
+        ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOB | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
+        ret = RCC_ControlPeripheral(RCC_USART1 | RCC_USART6, RCC_PERIPHERAL_ENABLE);
+    }
+    
+    ret = NVIC_EnableIRQ(USART1_IRQn);
 
-    ret = CLCD_asyncInit();
+    ret = GPIO_Init(&uart1_tx_pin);
+    ret = GPIO_Init(&uart1_rx_pin);
 
-    ret = Scheduler_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX, 1);
-    ret = Scheduler_RegisterRunnable(&lcd_writer);
-    ret = Scheduler_Start();
+    ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
+    ret = UART_Init(&uart1_config, SYSTICK_CLOCK_SOURCE_PLL_MAX);
+    ret = LED_Init();
 
-
-    while(1){}
+    while(1){
+        ret = UART_SendBufferIT(&uart1_config, (uint8_t*)"Ehab\0", 5);
+        ret = UART_ReceiveBufferIT(&uart1_config, (uint8_t*)&data, 7);
+        SYSTICK_DelayMS(1000);
+    }
     
     return 0;
 }
