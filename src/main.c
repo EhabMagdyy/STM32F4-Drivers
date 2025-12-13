@@ -35,7 +35,21 @@ GPIO_t uart1_rx_pin = {
     .altFunc    = GPIO_AF7_USART1_2
 };
 
-volatile uint8_t data[10] = {0};
+uint8_t TxBuffer[4] = "Ack\0";
+
+Buffer_t txBuf = { 
+    .data = TxBuffer, 
+    .length = 4,
+    .index = 0
+};
+
+uint8_t RxBuffer[50] = {0};
+
+Buffer_t rxBuf = { 
+    .data = RxBuffer, 
+    .length = 4,
+    .index = 0
+};
 
 void UART_RxCallback(void);
 
@@ -48,9 +62,11 @@ UART_Config_t uart1_config = {
     .rxCallback = UART_RxCallback
 };
 
+volatile uint8_t flag = 0;
+
 void UART_RxCallback(void){
-    if(data[0] == 'D'){
-        UART_SendBufferIT(&uart1_config, (uint8_t*)"Ack\0", 4);
+    if(rxBuf.data[0] == 'A'){
+        flag = 1;
     }
 }
 
@@ -72,10 +88,16 @@ int main(){
     ret = UART_Init(&uart1_config, SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
 
+    ret = UART_SendBufferIT(&uart1_config, &txBuf);
+
     while(1){
-        ret = UART_SendBufferIT(&uart1_config, (uint8_t*)"Ehab\0", 5);
-        ret = UART_ReceiveBufferIT(&uart1_config, (uint8_t*)&data, 7);
+        ret = UART_ReceiveBufferIT(&uart1_config, &rxBuf);
         SYSTICK_DelayMS(1000);
+        if(flag == 1){
+            ret = UART_SendBufferIT(&uart1_config, &txBuf);
+            ret = LED_Toggle(LED_0);
+            flag = 0;
+        }
     }
     
     return 0;

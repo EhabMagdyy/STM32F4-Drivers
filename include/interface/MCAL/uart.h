@@ -48,6 +48,12 @@ typedef void (*CBFunc_t)(void);
 #define UART_INTERRUPT_DISABLE   0
 
 typedef struct{
+    uint8_t* data;
+    uint8_t length;
+    uint8_t index;
+} Buffer_t;
+
+typedef struct{
     UART_Instance_t UartInstance;
     UART_BaudRate_t BaudRate;
     UART_DataBits_t DataBits;
@@ -59,13 +65,13 @@ typedef struct{
 STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clockSource);
 STD_ReturnType UART_DeInit(const UART_Config_t* uartObj);
 STD_ReturnType UART_SendChar(const UART_Config_t* uartObj, uint8_t data, uint32_t timeoutMS);
-STD_ReturnType UART_SendBuffer(const UART_Config_t* uartObj, const uint8_t* data, uint8_t length, uint32_t timeoutMS);
+STD_ReturnType UART_SendBuffer(const UART_Config_t* uartObj, Buffer_t* buffer, uint32_t timeoutMS);
 STD_ReturnType UART_ReceiveChar(const UART_Config_t* uartObj, uint8_t* data, uint32_t timeoutMS);
-STD_ReturnType UART_ReceiveBuffer(const UART_Config_t* uartObj, uint8_t* data, uint8_t length, uint32_t timeoutMS);
+STD_ReturnType UART_ReceiveBuffer(const UART_Config_t* uartObj, Buffer_t* buffer, uint32_t timeoutMS);
 
 STD_ReturnType UART_SendCharIT(const UART_Config_t* uartObj, uint8_t data);
-STD_ReturnType UART_SendBufferIT(const UART_Config_t* uartObj, const uint8_t* data, uint8_t length);
+STD_ReturnType UART_SendBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer);
 STD_ReturnType UART_ReceiveCharIT(const UART_Config_t* uartObj, uint8_t* data);
-STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, uint8_t* data, uint8_t length);
+STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer);
 
 #endif // UART_H

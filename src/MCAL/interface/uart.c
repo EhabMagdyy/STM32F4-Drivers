@@ -3,8 +3,10 @@
 volatile uint8_t txBuffer[3][100] = {0};
 volatile uint8_t* requestedTxBuffer[3] = {NULL};
 volatile uint32_t requestedTxLength[3] = {0};
+volatile uint8_t  requestedTxIndex[3] = {0};
 volatile uint8_t* requestedRxBuffer[3] = {NULL};
 volatile uint32_t requestedRxLength[3] = {0};
+volatile uint8_t  requestedRxIndex[3] = {0};
 
 CBFunc_t txCallback[3] ={NULL};
 CBFunc_t rxCallback[3] ={NULL};
@@ -154,15 +156,15 @@ STD_ReturnType UART_SendChar(const UART_Config_t* uartObj, uint8_t data, uint32_
     return ret;
 }
 
-STD_ReturnType UART_SendBuffer(const UART_Config_t* uartObj, const uint8_t* data, uint8_t length, uint32_t timeoutMS){
+STD_ReturnType UART_SendBuffer(const UART_Config_t* uartObj, Buffer_t* buffer, uint32_t timeoutMS){
     STD_ReturnType ret = STD_SUCCESS;
     
-    if(uartObj == NULL || data == NULL){
+    if(uartObj == NULL || buffer == NULL){
         ret = STD_ERROR;
     }
     else{
-        while(length--){
-            ret = UART_SendChar(uartObj, *data++, timeoutMS);
+        while(buffer->length--){
+            ret = UART_SendChar(uartObj, *buffer->data++, timeoutMS);
             if(ret != STD_SUCCESS){
                 break;
             }
@@ -182,7 +184,7 @@ STD_ReturnType UART_ReceiveChar(const UART_Config_t* uartObj, uint8_t* data, uin
         // Wait until Read Data Register Not Empty
         while((!(uartObj->UartInstance->SR &(1 << 5))) && currentTime < timeoutMS){
             currentTime++;
-            SYSTICK_DelayMS(1);     
+            SYSTICK_DelayMS(1);
         }
         if(currentTime >= timeoutMS){
             ret = STD_TIMEOUT;
@@ -194,15 +196,15 @@ STD_ReturnType UART_ReceiveChar(const UART_Config_t* uartObj, uint8_t* data, uin
     return ret;
 }
 
-STD_ReturnType UART_ReceiveBuffer(const UART_Config_t* uartObj, uint8_t* data, uint8_t length, uint32_t timeoutMS){
+STD_ReturnType UART_ReceiveBuffer(const UART_Config_t* uartObj, Buffer_t* buffer, uint32_t timeoutMS){
     STD_ReturnType ret = STD_SUCCESS;
     
-    if(uartObj == NULL){
+    if(uartObj == NULL || buffer == NULL){
         ret = STD_ERROR;
     }
     else{
-        while(length--){
-            ret = UART_ReceiveChar(uartObj, data++, timeoutMS);
+        while(buffer->length--){
+            ret = UART_ReceiveChar(uartObj, buffer->data++, timeoutMS);
             if(ret != STD_SUCCESS){
                 break;
             }
@@ -235,8 +237,8 @@ STD_ReturnType UART_SendCharIT(const UART_Config_t* uartObj, uint8_t data){
     return ret;
 }
 
-STD_ReturnType UART_SendBufferIT(const UART_Config_t* uartObj, const uint8_t* data, uint8_t length){
-    if(uartObj == NULL || data == NULL || length == 0){
+STD_ReturnType UART_SendBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer){
+    if(uartObj == NULL || buffer == NULL || buffer->length == 0){
         return STD_ERROR;
     }
     int8_t uartNum = uart_index(uartObj->UartInstance);
@@ -248,15 +250,16 @@ STD_ReturnType UART_SendBufferIT(const UART_Config_t* uartObj, const uint8_t* da
         return STD_BUSY;
     }
 
-    if(length > sizeof(txBuffer[uartNum])){
+    if(buffer->length > sizeof(txBuffer[uartNum])){
         return STD_ERROR;
     }
 
-    for(uint8_t i = 0; i < length; i++){
-        txBuffer[uartNum][i] = data[i];
+    for(uint8_t i = 0; i < buffer->length; i++){
+        txBuffer[uartNum][i] = buffer->data[i];
     }
     requestedTxBuffer[uartNum] = &txBuffer[uartNum][0];
-    requestedTxLength[uartNum] = length;
+    requestedTxLength[uartNum] = buffer->length;
+    buffer->index = requestedTxIndex[uartNum] = 0;
 
     // enable TXE
     uartObj->UartInstance->CR1 |=(1 << 7);
@@ -286,10 +289,10 @@ STD_ReturnType UART_ReceiveCharIT(const UART_Config_t* uartObj, uint8_t* data){
     return ret;
 }
 
-STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, uint8_t* data, uint8_t length){
+STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer){
     STD_ReturnType ret = STD_SUCCESS;
 
-    if(uartObj == NULL || data == NULL || length == 0){
+    if(uartObj == NULL || buffer == NULL || buffer->length == 0){
         ret = STD_ERROR;
     }
     else{
@@ -302,8 +305,10 @@ STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, uint8_t* data,
                 return STD_BUSY;
             }
             else{
-                requestedRxBuffer[uartNum] = data;
-                requestedRxLength[uartNum] = length;
+                requestedRxBuffer[uartNum] = buffer->data;
+                requestedRxLength[uartNum] = buffer->length;
+                buffer->index = requestedRxIndex[uartNum] = 0;
+                
                 uartObj->UartInstance->CR1 |=(1 << 5); // enable RXNEIE
             }
         }
@@ -319,6 +324,7 @@ void USART1_IRQHandler(void){
         if(requestedTxLength[uartNum] > 0 && requestedTxBuffer[uartNum] != NULL){
             UART1->DR = *(requestedTxBuffer[uartNum]++);
             requestedTxLength[uartNum]--;
+            requestedTxIndex[uartNum]++;
         }
         if(requestedTxLength[uartNum] == 0){
             UART1->CR1 &= ~(1 << 7);  // disable TXE
@@ -337,6 +343,7 @@ void USART1_IRQHandler(void){
         if(requestedRxLength[uartNum] > 0){
             *(requestedRxBuffer[uartNum]++) = data;
             requestedRxLength[uartNum]--;
+            requestedRxIndex[uartNum]++;
         }
         if(requestedRxLength[uartNum] == 0){
             counter = 0;
@@ -356,6 +363,7 @@ void USART2_IRQHandler(void){
         if(requestedTxLength[uartNum] > 0 && requestedTxBuffer[uartNum] != NULL){
             UART2->DR = *(requestedTxBuffer[uartNum]++);
             requestedTxLength[uartNum]--;
+            requestedTxIndex[uartNum]++;
         }
         if(requestedTxLength[uartNum] == 0){
             UART2->CR1 &= ~(1 << 7);  // disable TXE
@@ -369,9 +377,10 @@ void USART2_IRQHandler(void){
     if(UART2->SR &(1 << 5)){
         int8_t uartNum = 1;
         uint8_t data =(uint8_t)(UART2->DR & 0xFF);
-        if(requestedRxLength[uartNum] > 0 && requestedRxBuffer[uartNum] != NULL){
+        if(requestedRxLength[uartNum] > 0){
             *(requestedRxBuffer[uartNum]++) = data;
             requestedRxLength[uartNum]--;
+            requestedRxIndex[uartNum]++;
         }
         if(requestedRxLength[uartNum] == 0){
             UART2->CR1 &= ~(1 << 5);
@@ -390,6 +399,7 @@ void USART6_IRQHandler(void){
         if(requestedTxLength[uartNum] > 0 && requestedTxBuffer[uartNum] != NULL){
             UART6->DR = *(requestedTxBuffer[uartNum]++);
             requestedTxLength[uartNum]--;
+            requestedTxIndex[uartNum]++;
         }
         if(requestedTxLength[uartNum] == 0){
             UART6->CR1 &= ~(1 << 7);  // disable TXE
@@ -403,7 +413,7 @@ void USART6_IRQHandler(void){
     if(UART6->SR &(1 << 5)){
         int8_t uartNum = 2;
         uint8_t data =(uint8_t)(UART6->DR & 0xFF);
-        if(requestedRxLength[uartNum] > 0 && requestedRxBuffer[uartNum] != NULL){
+        if(requestedRxLength[uartNum] > 0){
             *(requestedRxBuffer[uartNum]++) = data;
             requestedRxLength[uartNum]--;
         }
