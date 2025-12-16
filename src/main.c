@@ -17,7 +17,7 @@ RCC_CFG_t rcc_pll = {
 
 GPIO_t uart1_tx_pin = {
     .port       = GPIO_PORTA,
-    .pin        = GPIO_PIN_9,
+    .pin        = GPIO_PIN_2,
     .mode       = GPIO_MODE_AF,
     .outputType = GPIO_OUTPUT_PUSHPULL,
     .speed      = GPIO_SPEED_HIGH,
@@ -27,7 +27,7 @@ GPIO_t uart1_tx_pin = {
 
 GPIO_t uart1_rx_pin = {
     .port       = GPIO_PORTA,
-    .pin        = GPIO_PIN_10,
+    .pin        = GPIO_PIN_3,
     .mode       = GPIO_MODE_AF,
     .outputType = GPIO_OUTPUT_PUSHPULL,
     .speed      = GPIO_SPEED_HIGH,
@@ -54,7 +54,7 @@ Buffer_t rxBuf = {
 void UART_RxCallback(void);
 
 UART_Config_t uart1_config = {
-    .UartInstance = UART1,
+    .UartInstance = UART2,
     .BaudRate = UART_BAUDRATE_115200,
     .DataBits = UART_DATABITS_8,
     .Parity = UART_PARITY_NONE,
@@ -76,10 +76,13 @@ int main(){
     ret = RCC_ConfigureClock(&rcc_pll);
     if(ret == STD_SUCCESS){
         ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOB | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
+        ret = RCC_ControlPeripheral(RCC_USART2, RCC_PERIPHERAL_ENABLE);
         ret = RCC_ControlPeripheral(RCC_USART1 | RCC_USART6, RCC_PERIPHERAL_ENABLE);
     }
     
     ret = NVIC_EnableIRQ(USART1_IRQn);
+    ret = NVIC_EnableIRQ(USART2_IRQn);
+    ret = NVIC_EnableIRQ(USART6_IRQn);
 
     ret = GPIO_Init(&uart1_tx_pin);
     ret = GPIO_Init(&uart1_rx_pin);

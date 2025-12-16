@@ -26,6 +26,12 @@ STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clo
         ret = STD_ERROR;
     }
     else{
+        // Get UART Instance Number
+        int8_t uartNum = uart_index(uartObj->UartInstance);
+        if(uartNum < 0){
+            ret = STD_ERROR;
+            return ret;
+        }
         // 0. Extract Clock Source Frequency
         uint32_t clockFreq = 0;
         switch(clockSource){
@@ -41,6 +47,12 @@ STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clo
             default:
                 ret = STD_ERROR;
                 break;
+        }
+        if(uartNum == 1){
+            clockFreq /= 2; // Divide Clock Frequenct by 2 for USART2 because its connected to APB1 (42MHz)
+        }
+        else{
+            // Nothing
         }
 
         if(ret != STD_SUCCESS){
@@ -84,11 +96,6 @@ STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clo
         }
 
         // 5. Interrupt Configuration
-        int8_t uartNum = uart_index(uartObj->UartInstance);
-        if(uartNum < 0){
-            ret = STD_ERROR;
-            return ret;
-        }
         txCallback[uartNum] = uartObj->txCallback;
         rxCallback[uartNum] = uartObj->rxCallback;
 
