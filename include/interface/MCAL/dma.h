@@ -3,6 +3,10 @@
 
 #include "../../../lib/STD_Types.h"
 
+/* Notes:
+    - There is No Memory to Memory mode for DMA1
+*/
+
 #define DMA_1   0
 #define DMA_2   1
 
@@ -65,6 +69,34 @@ typedef enum{
     DMA_PERIPH_INC_ENABLE
 } DMA_PeriphInc_t;
 
+typedef enum{
+    DMA_MEM_SIZE_8BIT = 0,
+    DMA_MEM_SIZE_16BIT,
+    DMA_MEM_SIZE_32BIT
+} DMA_MemSize_t;
+
+typedef enum{
+    DMA_PERIPH_SIZE_8BIT = 0,
+    DMA_PERIPH_SIZE_16BIT,
+    DMA_PERIPH_SIZE_32BIT   
+} DMA_PeriphSize_t;
+
+typedef enum{
+    DMA_IT_DISABLE = 0,
+    DMA_IT_COMPLETE = 8,
+    DMA_IT_HALF_COMPLETE = 4,
+    DMA_IT_TRANSFER_ERROR = 2,
+    DMA_IT_DIRECT_MODE_ERROR = 1,
+} DMA_Interrupt_Conf_t;
+
+typedef enum{
+    DMA_STATE_READY = 0,
+    DMA_STATE_BUSY,
+    DMA_STATE_ABORT
+} DMA_State_t;
+
+typedef void (*DMACBFunc_t)(void);
+
 typedef struct{
     uint8_t dmaNum;
     DMA_Stream_t stream;
@@ -73,14 +105,22 @@ typedef struct{
     DMA_PeriphBurst_t periphBurst;
     DMA_MemInc_t memInc;
     DMA_PeriphInc_t periphInc;
+    DMA_MemSize_t memSize;
+    DMA_PeriphSize_t periphSize;
     DMA_Priority_t priority;
     DMA_Direction_t direction;
+    DMA_Interrupt_Conf_t interruptConf;
+    DMACBFunc_t combleteCallback;
+    DMACBFunc_t halfCallback;
+    DMACBFunc_t errorCallback;
+    DMACBFunc_t directErrorCallback;
 } DMA_Instance_t;
 
 STD_ReturnType DMA_Init(DMA_Instance_t* dmaInstance);
 STD_ReturnType DMA_DeInit(DMA_Instance_t* dmaInstance);
 
 STD_ReturnType DMA_Start(DMA_Instance_t* dmaInstance, uint8_t* src, uint8_t* dest, uint8_t size);
+STD_ReturnType DMA_Abort(DMA_Instance_t* dmaInstance);
 
 
 #endif // DMA_H

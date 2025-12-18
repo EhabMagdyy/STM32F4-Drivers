@@ -16,20 +16,33 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
+uint8_t d1[5] = "Ehab"; 
+uint8_t d2[5] = "Lena"; 
+
+void mydmaCallback(void){
+    if(d2[2] == 'a'){
+        LED_Toggle(LED_0);
+    }
+}
+
 DMA_Instance_t dmaInstance = {
     .dmaNum = DMA_2,
-    .stream = DMA_STREAM_0,
+    .stream = DMA_STREAM_7,
     .channel = DMA_CHANNEL_0,
     .direction = DMA_MEMORY_TO_MEMORY,
     .memInc = DMA_MEM_INC_ENABLE,
     .periphInc = DMA_PERIPH_INC_ENABLE,
     .priority = DMA_PRIORITY_LOW,
     .memBurst = DMA_MEM_BURST_SINGLE,
-    .periphBurst = DMA_PERIPH_BURST_SINGLE
+    .periphBurst = DMA_PERIPH_BURST_SINGLE,
+    .memSize = DMA_MEM_SIZE_8BIT,
+    .periphSize = DMA_PERIPH_SIZE_8BIT,
+    .interruptConf = DMA_IT_COMPLETE | DMA_IT_HALF_COMPLETE | DMA_IT_DIRECT_MODE_ERROR,
+    .combleteCallback = mydmaCallback,
+    .halfCallback = NULL,
+    .errorCallback = NULL,
+    .directErrorCallback = NULL
 };
-
-uint8_t d1[5] = "Ehab"; 
-uint8_t d2[5] = "Lena"; 
 
 int main(){
 
@@ -42,11 +55,10 @@ int main(){
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
     ret = DMA_Init(&dmaInstance);
-    
-    ret = DMA_Start(&dmaInstance, d1, d2, 4);
 
     while(1){
-
+        ret = DMA_Start(&dmaInstance, d1, d2, 4);
+        SYSTICK_DelayMS(1000);
     }
     
     return 0;
