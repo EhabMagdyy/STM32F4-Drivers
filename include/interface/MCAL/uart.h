@@ -42,6 +42,8 @@ typedef struct{
     UART_BaudRate_t BaudRate;
     UART_DataBits_t DataBits;
     UART_Parity_t Parity;
+    uint8_t port;
+    uint8_t txPin;
     CBFunc_t txCallback;
     CBFunc_t rxCallback;
 } UART_Config_t;

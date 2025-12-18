@@ -1,4 +1,7 @@
 #include "interface/MCAL/uart.h"
+#include "interface/MCAL/rcc.h"
+#include "interface/Core/nvic.h"
+#include "interface/MCAL/gpio.h"
 
 volatile uint8_t txBuffer[3][100] = {0};
 volatile uint8_t* requestedTxBuffer[3] = {NULL};
@@ -28,6 +31,7 @@ STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clo
     else{
         // Get UART Instance Number
         int8_t uartNum = uart_index(uartObj->UartInstance);
+        uint8_t altFunc = 0;
         if(uartNum < 0){
             ret = STD_ERROR;
             return ret;
@@ -59,10 +63,22 @@ STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clo
             return ret;
         }
 
-        // 1. Reset Control Registers
-        uartObj->UartInstance->CR1 = 0x00000000;
-        uartObj->UartInstance->CR2 = 0x00000000;
-        uartObj->UartInstance->CR3 = 0x00000000;
+        // 1. RCC Enable
+        if(uartNum == 0){
+            ret = RCC_ControlPeripheral(RCC_USART1, RCC_PERIPHERAL_ENABLE);
+            altFunc = GPIO_AF7_USART1_2;
+        }
+        else if(uartNum == 1){
+            ret = RCC_ControlPeripheral(RCC_USART2, RCC_PERIPHERAL_ENABLE);
+            altFunc = GPIO_AF7_USART1_2;
+        }
+        else if(uartNum == 2){
+            ret = RCC_ControlPeripheral(RCC_USART6, RCC_PERIPHERAL_ENABLE);
+            altFunc = GPIO_AF8_USART6;
+        }
+        else{
+            ret = STD_ERROR;
+        }
 
         // 2. Baud Rate Selection
         uint32_t baudRate = uartObj->BaudRate;
@@ -108,6 +124,47 @@ STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clo
 
         // 8. Enable UART
         uartObj->UartInstance->CR1 |=(1 << 13); // USART Enable
+
+        // 9. Configure UART Pins
+        GPIO_t uart_tx_pin = {
+            .port       = uartObj->port,
+            .pin        = uartObj->txPin,
+            .mode       = GPIO_MODE_AF,
+            .outputType = GPIO_OUTPUT_PUSHPULL,
+            .speed      = GPIO_SPEED_HIGH,
+            .pullType   = GPIO_NOPULL,
+            .altFunc    = altFunc
+        };
+        ret = GPIO_Init(&uart_tx_pin);
+        if(ret == STD_SUCCESS){
+            GPIO_t uart_rx_pin = {
+                .port       = uartObj->port,
+                .pin        = uartObj->txPin + 1,
+                .mode       = GPIO_MODE_AF,
+                .outputType = GPIO_OUTPUT_PUSHPULL,
+                .speed      = GPIO_SPEED_HIGH,
+                .pullType   = GPIO_NOPULL,
+                .altFunc    = altFunc
+            };
+            ret = GPIO_Init(&uart_rx_pin);
+        }
+        else{
+            ret = STD_ERROR;
+        }
+
+        // 11. Enable NVIC
+        if(uartNum == 0){
+            ret = NVIC_EnableIRQ(USART1_IRQn);
+        }
+        else if(uartNum == 1){
+            ret = NVIC_EnableIRQ(USART2_IRQn);
+        }
+        else if(uartNum == 2){
+            ret = NVIC_EnableIRQ(USART6_IRQn);
+        }
+        else{
+            ret = STD_ERROR;
+        }
     }
     return ret;
 }

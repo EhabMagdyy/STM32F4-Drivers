@@ -15,26 +15,6 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
-GPIO_t uart1_tx_pin = {
-    .port       = GPIO_PORTA,
-    .pin        = GPIO_PIN_2,
-    .mode       = GPIO_MODE_AF,
-    .outputType = GPIO_OUTPUT_PUSHPULL,
-    .speed      = GPIO_SPEED_HIGH,
-    .pullType   = GPIO_NOPULL,
-    .altFunc    = GPIO_AF7_USART1_2
-};
-
-GPIO_t uart1_rx_pin = {
-    .port       = GPIO_PORTA,
-    .pin        = GPIO_PIN_3,
-    .mode       = GPIO_MODE_AF,
-    .outputType = GPIO_OUTPUT_PUSHPULL,
-    .speed      = GPIO_SPEED_HIGH,
-    .pullType   = GPIO_NOPULL,
-    .altFunc    = GPIO_AF7_USART1_2
-};
-
 uint8_t TxBuffer[4] = "Ack\0";
 
 Buffer_t txBuf = { 
@@ -58,6 +38,8 @@ UART_Config_t uart1_config = {
     .BaudRate = UART_BAUDRATE_115200,
     .DataBits = UART_DATABITS_8,
     .Parity = UART_PARITY_NONE,
+    .port = GPIO_PORTA,
+    .txPin = GPIO_PIN_2,
     .txCallback = NULL,
     .rxCallback = UART_RxCallback
 };
@@ -76,16 +58,7 @@ int main(){
     ret = RCC_ConfigureClock(&rcc_pll);
     if(ret == STD_SUCCESS){
         ret = RCC_ControlPeripheral(RCC_GPIOA | RCC_GPIOB | RCC_GPIOC, RCC_PERIPHERAL_ENABLE);
-        ret = RCC_ControlPeripheral(RCC_USART2, RCC_PERIPHERAL_ENABLE);
-        ret = RCC_ControlPeripheral(RCC_USART1 | RCC_USART6, RCC_PERIPHERAL_ENABLE);
     }
-    
-    ret = NVIC_EnableIRQ(USART1_IRQn);
-    ret = NVIC_EnableIRQ(USART2_IRQn);
-    ret = NVIC_EnableIRQ(USART6_IRQn);
-
-    ret = GPIO_Init(&uart1_tx_pin);
-    ret = GPIO_Init(&uart1_rx_pin);
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = UART_Init(&uart1_config, SYSTICK_CLOCK_SOURCE_PLL_MAX);
