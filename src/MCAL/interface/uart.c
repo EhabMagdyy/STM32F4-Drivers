@@ -176,13 +176,39 @@ STD_ReturnType UART_DeInit(const UART_Config_t* uartObj){
         ret = STD_ERROR;
     }
     else{
-        uartObj->UartInstance->CR1 &= ~(1 << 13); // USART Disable
-        uartObj->UartInstance->CR1 &= ~(1 << 3);  // Transmitter Disable
-        uartObj->UartInstance->CR1 &= ~(1 << 2);  // Receiver Disable
-        uartObj->UartInstance->CR1 = 0x00000000;  // Reset Control Registers 1
-        uartObj->UartInstance->CR2 = 0x00000000;  // Reset Control Registers 2
-        uartObj->UartInstance->CR3 = 0x00000000;  // Reset Control Registers 3
-        uartObj->UartInstance->BRR = 0x00000000;  // Reset Baud Rate Register
+        uartObj->UartInstance->CR1 = 0U;  // Reset Control Registers 1
+        uartObj->UartInstance->CR2 = 0U;  // Reset Control Registers 2
+        uartObj->UartInstance->CR3 = 0U;  // Reset Control Registers 3
+        uartObj->UartInstance->BRR = 0U;  // Reset Baud Rate Register
+
+        // RCC Disable
+        int8_t uartNum = uart_index(uartObj->UartInstance);
+        if(uartNum == 0){
+            ret = RCC_ControlPeripheral(RCC_USART1, RCC_PERIPHERAL_DISABLE);
+        }
+        else if(uartNum == 1){
+            ret = RCC_ControlPeripheral(RCC_USART2, RCC_PERIPHERAL_DISABLE);
+        }
+        else if(uartNum == 2){
+            ret = RCC_ControlPeripheral(RCC_USART6, RCC_PERIPHERAL_DISABLE);
+        }
+        else{
+            ret = STD_ERROR;
+        }
+
+        // NVIC Disable
+        if(uartNum == 0){
+            ret = NVIC_DisableIRQ(USART1_IRQn);
+        }
+        else if(uartNum == 1){
+            ret = NVIC_DisableIRQ(USART2_IRQn);
+        }
+        else if(uartNum == 2){
+            ret = NVIC_DisableIRQ(USART6_IRQn);
+        }
+        else{
+            ret = STD_ERROR;
+        }
     }
     return ret;
 }
