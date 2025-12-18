@@ -8,6 +8,7 @@
 #include "OS/scheduler.h"
 #include "interface/HAL/led_matrix.h"
 #include "interface/MCAL/uart.h"
+#include "interface/MCAL/dma.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -15,42 +16,20 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
-uint8_t TxBuffer[4] = "Ack\0";
-
-Buffer_t txBuf = { 
-    .data = TxBuffer, 
-    .length = 4,
-    .index = 0
+DMA_Instance_t dmaInstance = {
+    .dmaNum = DMA_2,
+    .stream = DMA_STREAM_0,
+    .channel = DMA_CHANNEL_0,
+    .direction = DMA_MEMORY_TO_MEMORY,
+    .memInc = DMA_MEM_INC_ENABLE,
+    .periphInc = DMA_PERIPH_INC_ENABLE,
+    .priority = DMA_PRIORITY_LOW,
+    .memBurst = DMA_MEM_BURST_SINGLE,
+    .periphBurst = DMA_PERIPH_BURST_SINGLE
 };
 
-uint8_t RxBuffer[50] = {0};
-
-Buffer_t rxBuf = { 
-    .data = RxBuffer, 
-    .length = 4,
-    .index = 0
-};
-
-void UART_RxCallback(void);
-
-UART_Config_t uart1_config = {
-    .UartInstance = UART2,
-    .BaudRate = UART_BAUDRATE_115200,
-    .DataBits = UART_DATABITS_8,
-    .Parity = UART_PARITY_NONE,
-    .port = GPIO_PORTA,
-    .txPin = GPIO_PIN_2,
-    .txCallback = NULL,
-    .rxCallback = UART_RxCallback
-};
-
-volatile uint8_t flag = 0;
-
-void UART_RxCallback(void){
-    if(rxBuf.data[0] == 'A'){
-        flag = 1;
-    }
-}
+uint8_t d1[5] = "Ehab"; 
+uint8_t d2[5] = "Lena"; 
 
 int main(){
 
@@ -61,19 +40,13 @@ int main(){
     }
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
-    ret = UART_Init(&uart1_config, SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-
-    ret = UART_SendBufferIT(&uart1_config, &txBuf);
+    ret = DMA_Init(&dmaInstance);
+    
+    ret = DMA_Start(&dmaInstance, d1, d2, 4);
 
     while(1){
-        ret = UART_ReceiveBufferIT(&uart1_config, &rxBuf);
-        SYSTICK_DelayMS(1000);
-        if(flag == 1){
-            ret = UART_SendBufferIT(&uart1_config, &txBuf);
-            ret = LED_Toggle(LED_0);
-            flag = 0;
-        }
+
     }
     
     return 0;
