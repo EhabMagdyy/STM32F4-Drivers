@@ -143,7 +143,7 @@ STD_ReturnType DMA_DeInit(DMA_Instance_t* dmaInstance){
     return ret;
 }
 
-STD_ReturnType DMA_Start(DMA_Instance_t* dmaInstance, uint8_t* src, uint8_t* dest, uint8_t length){
+STD_ReturnType DMA_Start(DMA_Instance_t* dmaInstance, uint32_t src, uint32_t dest, uint32_t length){
     STD_ReturnType ret = STD_SUCCESS;
 
     if(dmaInstance == NULL || dmaInstance->stream > 7 || dmaInstance->channel > 7){
@@ -154,12 +154,12 @@ STD_ReturnType DMA_Start(DMA_Instance_t* dmaInstance, uint8_t* src, uint8_t* des
 
         DMA_STREAM.NDTR = length;
         if(dmaInstance->direction == DMA_MEMORY_TO_PERIPHERAL){
-            DMA_STREAM.PAR = (uint32_t)dest;
-            DMA_STREAM.M0AR = (uint32_t)src;
+            DMA_STREAM.PAR = dest;
+            DMA_STREAM.M0AR = src;
         }
         else{
-            DMA_STREAM.PAR = (uint32_t)src;
-            DMA_STREAM.M0AR = (uint32_t)dest;
+            DMA_STREAM.PAR = src;
+            DMA_STREAM.M0AR = dest;
         }
 
         DMA_STREAM.CR |= (1 << DMA_CR_EN_BIT);
