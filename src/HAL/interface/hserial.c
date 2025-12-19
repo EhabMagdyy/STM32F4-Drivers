@@ -84,3 +84,25 @@ STD_ReturnType HSerial_ReceiveBuffer(HSerial_Config_t* hserialConfig){
 
     return ret;
 }
+
+STD_ReturnType HSerial_TxGetState(HSerial_Config_t* hserialConfig, DMA_State_t* state){
+    STD_ReturnType ret = STD_SUCCESS;
+    if(hserialConfig == NULL){
+        ret = STD_ERROR;
+    }
+    else{
+        ret = DMA_GetState(hserialConfig->txDma, state);
+    }
+    return ret;
+}
+
+STD_ReturnType HSerial_RxGetState(HSerial_Config_t* hserialConfig, DMA_State_t* state){
+    STD_ReturnType ret = STD_SUCCESS;
+    if(hserialConfig == NULL){
+        ret = STD_ERROR;
+    }
+    else{
+        ret = DMA_GetState(hserialConfig->rxDma, state);
+    }
+    return ret;
+}

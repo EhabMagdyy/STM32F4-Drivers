@@ -186,6 +186,17 @@ STD_ReturnType DMA_Abort(DMA_Instance_t* dmaInstance){
     return ret;
 }
 
+STD_ReturnType DMA_GetState(DMA_Instance_t* dmaInstance, DMA_State_t* state){
+    STD_ReturnType ret = STD_SUCCESS;
+    if(dmaInstance == NULL || state == NULL){
+        ret = STD_ERROR;
+    }
+    else{
+        *state = dmaState[dmaInstance->dmaNum][dmaInstance->stream];
+    }
+    return ret;
+}
+
 static STD_ReturnType DMA_NVIC_IRQ_Enable(uint8_t dmaNum, uint8_t streamNum){
     STD_ReturnType ret = STD_SUCCESS;
 

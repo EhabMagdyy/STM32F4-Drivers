@@ -109,9 +109,18 @@ int main(){
 
     ret = HSerial_Init(&hserialConfig, SYSTICK_CLOCK_SOURCE_PLL_MAX);
 
+    DMA_State_t dmaTxState = 0;
+    DMA_State_t dmaRxState = 0;
+
     while(1){
-        ret = HSerial_ReceiveBuffer(&hserialConfig);
-        ret = HSerial_SendBuffer(&hserialConfig);
+        ret = HSerial_RxGetState(&hserialConfig, &dmaRxState);
+        if(dmaRxState == DMA_STATE_READY){
+            ret = HSerial_ReceiveBuffer(&hserialConfig);
+        }
+        ret = HSerial_TxGetState(&hserialConfig, &dmaTxState);
+        if(dmaTxState == DMA_STATE_READY){
+            ret = HSerial_SendBuffer(&hserialConfig);
+        }
         SYSTICK_DelayMS(1000);
     }
     

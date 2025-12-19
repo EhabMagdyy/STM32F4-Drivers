@@ -121,6 +121,7 @@ STD_ReturnType DMA_DeInit(DMA_Instance_t* dmaInstance);
 
 STD_ReturnType DMA_Start(DMA_Instance_t* dmaInstance, uint32_t src, uint32_t dest, uint32_t size);
 STD_ReturnType DMA_Abort(DMA_Instance_t* dmaInstance);
+STD_ReturnType DMA_GetState(DMA_Instance_t* dmaInstance, DMA_State_t* state);
 
 
 #endif // DMA_H

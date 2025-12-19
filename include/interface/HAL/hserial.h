@@ -24,5 +24,7 @@ STD_ReturnType HSerial_Init(HSerial_Config_t* hserialConfig, SYSTICK_ClockSource
 STD_ReturnType HSerial_DeInit(HSerial_Config_t* hserialConfig);
 STD_ReturnType HSerial_SendBuffer(HSerial_Config_t* hserialConfig);
 STD_ReturnType HSerial_ReceiveBuffer(HSerial_Config_t* hserialConfig);
+STD_ReturnType HSerial_TxGetState(HSerial_Config_t* hserialConfig, DMA_State_t* state);
+STD_ReturnType HSerial_RxGetState(HSerial_Config_t* hserialConfig, DMA_State_t* state);
 
 #endif // H_SERIAL_H
