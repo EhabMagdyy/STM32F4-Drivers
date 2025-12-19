@@ -44,7 +44,7 @@ STD_ReturnType DMA_Init(DMA_Instance_t* dmaInstance){
             dma2UsedCounter++;
         }
         else{
-            return ret;
+            // Nothing
         }
 
         // Clear EN to able to write in CR

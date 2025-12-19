@@ -3,6 +3,7 @@
 
 typedef enum {
     LED_0 = 0,
+    LED_1,
     LED_LEN
 } LED_Names_t;
 

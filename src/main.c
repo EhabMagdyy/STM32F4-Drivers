@@ -18,13 +18,17 @@ RCC_CFG_t rcc_pll = {
 };
 
 uint8_t d1[12] = "Ehab1234567"; 
-uint8_t d2[5] = {0}; 
+uint8_t d2[12] = {0}; 
 
-void mydmaCallback(void){
+void myTxCallback(void){
     LED_Toggle(LED_0);
 }
 
-DMA_Instance_t dmaInstance = {
+void myRxCallback(void){
+    LED_Toggle(LED_1);
+}
+
+DMA_Instance_t dmaInstanceTx = {
     .dmaNum = DMA_2,
     .stream = DMA_STREAM_7,
     .channel = DMA_CHANNEL_4,
@@ -37,7 +41,26 @@ DMA_Instance_t dmaInstance = {
     .memSize = DMA_MEM_SIZE_8BIT,
     .periphSize = DMA_PERIPH_SIZE_8BIT,
     .interruptConf = DMA_IT_COMPLETE,
-    .combleteCallback = mydmaCallback,
+    .combleteCallback = myTxCallback,
+    .halfCallback = NULL,
+    .errorCallback = NULL,
+    .directErrorCallback = NULL
+};
+
+DMA_Instance_t dmaInstanceRx = {
+    .dmaNum = DMA_2,
+    .stream = DMA_STREAM_5,
+    .channel = DMA_CHANNEL_4,
+    .direction = DMA_PERIPHERAL_TO_MEMORY,
+    .memInc = DMA_MEM_INC_ENABLE,
+    .periphInc = DMA_PERIPH_INC_DISABLE,
+    .priority = DMA_PRIORITY_LOW,
+    .memBurst = DMA_MEM_BURST_SINGLE,
+    .periphBurst = DMA_PERIPH_BURST_SINGLE,
+    .memSize = DMA_MEM_SIZE_8BIT,
+    .periphSize = DMA_PERIPH_SIZE_8BIT,
+    .interruptConf = DMA_IT_COMPLETE,
+    .combleteCallback = myRxCallback,
     .halfCallback = NULL,
     .errorCallback = NULL,
     .directErrorCallback = NULL
@@ -54,7 +77,13 @@ UART_Config_t uart1_config = {
     .rxCallback = NULL
 };
 
-HSerial_Buffer_t hserial_buffer = {
+HSerial_Buffer_t hserial_txBuffer = {
+    .src = d1,
+    .dest = d2,
+    .length = 12
+};
+
+HSerial_Buffer_t hserial_rxBuffer = {
     .src = d1,
     .dest = d2,
     .length = 12
@@ -62,8 +91,10 @@ HSerial_Buffer_t hserial_buffer = {
 
 HSerial_Config_t hserialConfig = {
     .uartConfig = &uart1_config,
-    .dmaConfig = &dmaInstance,
-    .buffer = &hserial_buffer
+    .txDma = &dmaInstanceTx,
+    .rxDma = &dmaInstanceRx,
+    .txBuffer = &hserial_txBuffer,
+    .rxBuffer = &hserial_rxBuffer
 };
 
 int main(){
@@ -79,6 +110,7 @@ int main(){
     ret = HSerial_Init(&hserialConfig, SYSTICK_CLOCK_SOURCE_PLL_MAX);
 
     while(1){
+        ret = HSerial_ReceiveBuffer(&hserialConfig);
         ret = HSerial_SendBuffer(&hserialConfig);
         SYSTICK_DelayMS(1000);
     }

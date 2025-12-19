@@ -3,7 +3,7 @@
 STD_ReturnType HSerial_Init(HSerial_Config_t* hserialConfig, SYSTICK_ClockSource_t clockSource){
     STD_ReturnType ret = STD_SUCCESS;
 
-    if(hserialConfig == NULL || hserialConfig->uartConfig == NULL || hserialConfig->dmaConfig == NULL){
+    if(hserialConfig == NULL){
         ret = STD_ERROR;
     }
     else{
@@ -12,14 +12,19 @@ STD_ReturnType HSerial_Init(HSerial_Config_t* hserialConfig, SYSTICK_ClockSource
             return ret;
         }
 
-        ret = DMA_Init(hserialConfig->dmaConfig);
+        ret = DMA_Init(hserialConfig->txDma);
+        if(ret != STD_SUCCESS){
+            return ret;
+        }
+
+        ret = DMA_Init(hserialConfig->rxDma);
         if(ret != STD_SUCCESS){
             return ret;
         }
 
         // DMA Enable
         hserialConfig->uartConfig->UartInstance->CR3 |=(1 << 7); // TX DMA Enable
-        //hserialConfig->uartConfig->UartInstance->CR3 |=(1 << 6); // RX DMA Enable
+        hserialConfig->uartConfig->UartInstance->CR3 |=(1 << 6); // RX DMA Enable
     }
 
     return ret;
@@ -29,11 +34,16 @@ STD_ReturnType HSerial_Init(HSerial_Config_t* hserialConfig, SYSTICK_ClockSource
 STD_ReturnType HSerial_DeInit(HSerial_Config_t* hserialConfig){
     STD_ReturnType ret = STD_SUCCESS;
 
-    if(hserialConfig == NULL || hserialConfig->uartConfig == NULL || hserialConfig->dmaConfig == NULL){
+    if(hserialConfig == NULL){
         ret = STD_ERROR;
     }
     else{
-        ret = DMA_DeInit(hserialConfig->dmaConfig);
+        ret = DMA_DeInit(hserialConfig->txDma);
+        if(ret != STD_SUCCESS){
+            return ret;
+        }
+
+        ret = DMA_DeInit(hserialConfig->rxDma);
         if(ret != STD_SUCCESS){
             return ret;
         }
@@ -50,26 +60,27 @@ STD_ReturnType HSerial_DeInit(HSerial_Config_t* hserialConfig){
 STD_ReturnType HSerial_SendBuffer(HSerial_Config_t* hserialConfig){
     STD_ReturnType ret = STD_SUCCESS;
 
-    if(hserialConfig == NULL || hserialConfig->uartConfig == NULL || hserialConfig->dmaConfig == NULL || hserialConfig->buffer == NULL){
+    if(hserialConfig == NULL){
         ret = STD_ERROR;
     }
     else{        
-        ret = DMA_Start(hserialConfig->dmaConfig, (uint32_t)(hserialConfig->buffer->src), (uint32_t)&(hserialConfig->uartConfig->UartInstance->DR), hserialConfig->buffer->length);
+        ret = DMA_Start(hserialConfig->txDma, (uint32_t)(hserialConfig->txBuffer->src), 
+                (uint32_t)&(hserialConfig->uartConfig->UartInstance->DR), hserialConfig->txBuffer->length);
     }
 
     return ret;
 }
 
-// STD_ReturnType HSerial_ReceiveBuffer(HSerial_Config_t* hserialConfig){
-//     STD_ReturnType ret = STD_SUCCESS;
+STD_ReturnType HSerial_ReceiveBuffer(HSerial_Config_t* hserialConfig){
+    STD_ReturnType ret = STD_SUCCESS;
 
-//     if(hserialConfig == NULL || hserialConfig->uartConfig == NULL || hserialConfig->dmaConfig == NULL || hserialConfig->buffer == NULL){
-//         ret = STD_ERROR;
-//     }
-//     else{        
-//         // Start DMA Transfer
-//         ret = DMA_Start(hserialConfig->dmaConfig, (uint32_t)&(hserialConfig->uartConfig->UartInstance->DR), (uint32_t)(hserialConfig->buffer->dest), hserialConfig->buffer->length);
-//     }
+    if(hserialConfig == NULL){
+        ret = STD_ERROR;
+    }
+    else{        
+        // Start DMA Transfer
+        ret = DMA_Start(hserialConfig->rxDma, (uint32_t)&(hserialConfig->uartConfig->UartInstance->DR), (uint32_t)(hserialConfig->rxBuffer->dest), hserialConfig->rxBuffer->length);
+    }
 
-//     return ret;
-// }
+    return ret;
+}
