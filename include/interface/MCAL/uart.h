@@ -31,6 +31,9 @@ typedef void (*CBFunc_t)(void);
 #define UART_INTERRUPT_ENABLE    1
 #define UART_INTERRUPT_DISABLE   0
 
+#define UART_DMA_ENABLE    1
+#define UART_DMA_DISABLE   0
+
 typedef struct{
     uint8_t* data;
     uint8_t length;
@@ -59,5 +62,8 @@ STD_ReturnType UART_SendCharIT(const UART_Config_t* uartObj, uint8_t data);
 STD_ReturnType UART_SendBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer);
 STD_ReturnType UART_ReceiveCharIT(const UART_Config_t* uartObj, uint8_t* data);
 STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer);
+
+STD_ReturnType UART_SetDMATx(const UART_Config_t* uartObj, uint8_t state);
+STD_ReturnType UART_SetDMARx(const UART_Config_t* uartObj, uint8_t state);
 
 #endif // UART_H

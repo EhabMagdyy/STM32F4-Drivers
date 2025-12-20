@@ -407,6 +407,44 @@ STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, Buffer_t* buff
     return ret;
 }
 
+STD_ReturnType UART_SetDMATx(const UART_Config_t* uartObj, uint8_t state){
+    STD_ReturnType ret = STD_SUCCESS;
+    if(uartObj == NULL){
+        ret = STD_ERROR;
+    }
+    else{
+        if(state == UART_DMA_ENABLE){
+            uartObj->UartInstance->CR3 |=(1 << 7); // TX DMA Enable
+        }
+        else if(state == UART_DMA_DISABLE){
+            uartObj->UartInstance->CR3 &= ~(1 << 7); // TX DMA Disable
+        }
+        else{
+            ret = STD_ERROR;
+        }
+    }
+    return ret;
+}
+
+STD_ReturnType UART_SetDMARx(const UART_Config_t* uartObj, uint8_t state){
+    STD_ReturnType ret = STD_SUCCESS;
+    if(uartObj == NULL){
+        ret = STD_ERROR;
+    }
+    else{
+        if(state == UART_DMA_ENABLE){
+            uartObj->UartInstance->CR3 |=(1 << 6); // RX DMA Enable
+        }
+        else if(state == UART_DMA_DISABLE){
+            uartObj->UartInstance->CR3 &= ~(1 << 6); // RX DMA Disable
+        }
+        else{
+            ret = STD_ERROR;
+        }
+    }
+    return ret;
+}
+
 void USART1_IRQHandler(void){
     // TXE handling
     if(UART1->SR &(1 << 7) && (UART1->CR1 &(1 << 7))){
@@ -448,7 +486,7 @@ void USART1_IRQHandler(void){
 
 void USART2_IRQHandler(void){
     // TXE handling
-    if(UART2->SR &(1 << 7)){
+    if(UART2->SR &(1 << 7) && (UART2->CR1 &(1 << 7))){
         int8_t uartNum = 1;
         if(requestedTxLength[uartNum] > 0 && requestedTxBuffer[uartNum] != NULL){
             UART2->DR = *(requestedTxBuffer[uartNum]++);
@@ -464,7 +502,7 @@ void USART2_IRQHandler(void){
         }
     }
     // RXNE handling
-    if(UART2->SR &(1 << 5)){
+    if(UART2->SR &(1 << 5) && (UART2->CR1 &(1 << 5))){
         int8_t uartNum = 1;
         uint8_t data =(uint8_t)(UART2->DR & 0xFF);
         if(requestedRxLength[uartNum] > 0){
@@ -484,7 +522,7 @@ void USART2_IRQHandler(void){
 
 void USART6_IRQHandler(void){
     // TXE handling
-    if(UART6->SR &(1 << 7)){
+    if(UART6->SR &(1 << 7) && (UART6->CR1 &(1 << 7))){
         int8_t uartNum = 2;
         if(requestedTxLength[uartNum] > 0 && requestedTxBuffer[uartNum] != NULL){
             UART6->DR = *(requestedTxBuffer[uartNum]++);
@@ -500,7 +538,7 @@ void USART6_IRQHandler(void){
         }
     }
     // RXNE handling
-    if(UART6->SR &(1 << 5)){
+    if(UART6->SR &(1 << 5) && (UART6->CR1 &(1 << 5))){
         int8_t uartNum = 2;
         uint8_t data =(uint8_t)(UART6->DR & 0xFF);
         if(requestedRxLength[uartNum] > 0){
