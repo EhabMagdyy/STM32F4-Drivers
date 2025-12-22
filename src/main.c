@@ -10,6 +10,7 @@
 #include "interface/MCAL/uart.h"
 #include "interface/MCAL/dma.h"
 #include "interface/HAL/hserial.h"
+#include "interface/MCAL/spi.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -20,81 +21,22 @@ RCC_CFG_t rcc_pll = {
 uint8_t d1[12] = "Ehab1234567"; 
 uint8_t d2[12] = {0}; 
 
-void myTxCallback(void){
-    LED_Toggle(LED_0);
-}
-
-void myRxCallback(void){
-    LED_Toggle(LED_1);
-}
-
-DMA_Instance_t dmaInstanceTx = {
-    .dmaNum = DMA_2,
-    .stream = DMA_STREAM_7,
-    .channel = DMA_CHANNEL_4,
-    .direction = DMA_MEMORY_TO_PERIPHERAL,
-    .memInc = DMA_MEM_INC_ENABLE,
-    .periphInc = DMA_PERIPH_INC_DISABLE,
-    .priority = DMA_PRIORITY_LOW,
-    .memBurst = DMA_MEM_BURST_SINGLE,
-    .periphBurst = DMA_PERIPH_BURST_SINGLE,
-    .memSize = DMA_MEM_SIZE_8BIT,
-    .periphSize = DMA_PERIPH_SIZE_8BIT,
-    .interruptConf = DMA_IT_COMPLETE,
-    .combleteCallback = myTxCallback,
-    .halfCallback = NULL,
-    .errorCallback = NULL,
-    .directErrorCallback = NULL
+SPI_Config_t spi1 = {
+    .spiNum = SPI_1,
+    .mode = SPI_MODE_MASTER,
+    .dataFrame = SPI_DATA_FRAME_8BIT,
+    .baudRatePrescaler = SPI_BAUDRATE_PRESCALER_4,
+    .clockPhase = SPI_CLOCK_PHASE_1EDGE,
+    .clockPolarity = SPI_CLOCK_POLARITY_LOW,
+    .direction = SPI_DIRECTION_2LINES,
+    .frameFormat = SPI_FRAME_FORMAT_MSB_FIRST,
+    .frameFormatStandard = SPI_FRAME_FORMAT_MOTOROLA
 };
 
-DMA_Instance_t dmaInstanceRx = {
-    .dmaNum = DMA_2,
-    .stream = DMA_STREAM_5,
-    .channel = DMA_CHANNEL_4,
-    .direction = DMA_PERIPHERAL_TO_MEMORY,
-    .memInc = DMA_MEM_INC_ENABLE,
-    .periphInc = DMA_PERIPH_INC_DISABLE,
-    .priority = DMA_PRIORITY_LOW,
-    .memBurst = DMA_MEM_BURST_SINGLE,
-    .periphBurst = DMA_PERIPH_BURST_SINGLE,
-    .memSize = DMA_MEM_SIZE_8BIT,
-    .periphSize = DMA_PERIPH_SIZE_8BIT,
-    .interruptConf = DMA_IT_COMPLETE,
-    .combleteCallback = myRxCallback,
-    .halfCallback = NULL,
-    .errorCallback = NULL,
-    .directErrorCallback = NULL
-};
-
-UART_Config_t uart1_config = {
-    .UartInstance = UART1,
-    .BaudRate = UART_BAUDRATE_115200,
-    .DataBits = UART_DATABITS_8,
-    .Parity = UART_PARITY_NONE,
-    .port = GPIO_PORTA,
-    .txPin = GPIO_PIN_9,
-    .txCallback = NULL,
-    .rxCallback = NULL
-};
-
-HSerial_Buffer_t hserial_txBuffer = {
-    .src = d1,
-    .dest = d2,
+SPI_Buffer_t buffer = {
+    .txData = d1,
+    .rxData = d2,
     .length = 12
-};
-
-HSerial_Buffer_t hserial_rxBuffer = {
-    .src = d1,
-    .dest = d2,
-    .length = 12
-};
-
-HSerial_Config_t hserialConfig = {
-    .uartConfig = &uart1_config,
-    .txDma = &dmaInstanceTx,
-    .rxDma = &dmaInstanceRx,
-    .txBuffer = &hserial_txBuffer,
-    .rxBuffer = &hserial_rxBuffer
 };
 
 int main(){
@@ -106,19 +48,11 @@ int main(){
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-
-    ret = HSerial_Init(&hserialConfig, SYSTICK_CLOCK_SOURCE_PLL_MAX);
+    ret = SPI_Init(&spi1, SYSTICK_CLOCK_SOURCE_PLL_MAX);
+    ret = SPI_Tranceive(&spi1, &buffer, 1000);
 
     while(1){
-        ret = HSerial_ReceiveBuffer(&hserialConfig);
-        if(ret != STD_SUCCESS){
-            continue;
-        }
-        ret = HSerial_SendBuffer(&hserialConfig);
-        if(ret != STD_SUCCESS){
-            continue;
-        }
-        SYSTICK_DelayMS(1000);
+
     }
     
     return 0;
