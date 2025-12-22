@@ -11,6 +11,11 @@ static GPIO_t spi1_ss_pin;
 static GPIO_t spi2_ss_pin;
 static GPIO_t spi3_ss_pin;
 
+SPI_Callback_t SPI1_Callback[4] = {NULL};
+
+volatile SPI_State_t spiState[4];
+volatile SPI_Buffer_t* spiBuf[4];
+
 STD_ReturnType SPI_Init(const SPI_Config_t* config, SYSTICK_ClockSource_t clockSource){
     STD_ReturnType ret = STD_SUCCESS;
 
@@ -69,7 +74,6 @@ STD_ReturnType SPI_Init(const SPI_Config_t* config, SYSTICK_ClockSource_t clockS
         }
         else{
             SPI[config->spiNum]->CR1 &= ~(1U << 2); // MSTR = 0
-            SPI[config->spiNum]->CR1 &= ~(1U << 9); // SSM = 0
         }
 
         // 9. Configure GPIO Pins for SPI Functionality
@@ -78,7 +82,14 @@ STD_ReturnType SPI_Init(const SPI_Config_t* config, SYSTICK_ClockSource_t clockS
             return ret;
         }
 
-        // 10. Enable SPI Peripheral
+        // 10. Set Callback Function
+        SPI1_Callback[config->spiNum] = config->trancieveCallback;
+
+        // 11. Set Initial State
+        spiState[config->spiNum] = SPI_STATE_READY;
+        spiBuf[config->spiNum] = NULL;
+
+        // 12. Enable SPI Peripheral
         SPI[config->spiNum]->CR1 |= (1U << 6);
     }
 
@@ -122,47 +133,6 @@ STD_ReturnType SPI_DeInit(const SPI_Config_t* config){
     return ret;
 }
 
-STD_ReturnType SPI_Transmit(const SPI_Config_t* config, SPI_Buffer_t* buffer, uint32_t timeout){
-    STD_ReturnType ret = STD_SUCCESS;
-
-    if(config == NULL ||  buffer == NULL || buffer->txData == NULL || buffer->length == 0) {
-        ret = STD_ERROR;
-    }
-    else{
-        if(config->dataFrame == SPI_DATA_FRAME_8BIT){
-            for(uint8_t i = 0; i < buffer->length; i++){
-                // Wait until TX buffer is empty
-                uint32_t tickStart = 0;
-                while(!(SPI[config->spiNum]->SR & (1U << 1))){
-                    if(tickStart++ > timeout){
-                        return STD_TIMEOUT;
-                    }
-                }
-                // Send data
-                *((volatile uint8_t*)&SPI[config->spiNum]->DR) = *(uint8_t*)&(buffer->txData[i]);
-            }
-        }
-        else if(config->dataFrame == SPI_DATA_FRAME_16BIT){
-            for(uint8_t i = 0; i < buffer->length; i += 2){
-                // Wait until TX buffer is empty
-                uint32_t tickStart = 0;
-                while(!(SPI[config->spiNum]->SR & (1U << 1))){
-                    if(tickStart++ > timeout){
-                        return STD_TIMEOUT;
-                    }
-                }
-                // Send data
-                *((volatile uint16_t*)&SPI[config->spiNum]->DR) = *((uint16_t*)&(buffer->txData[i]));
-            }
-        }
-        else{
-            ret = STD_ERROR;
-        }
-    }
-
-    return ret;
-}
-
 STD_ReturnType SPI_Tranceive(const SPI_Config_t* config, SPI_Buffer_t* buffer, uint32_t timeout){
     STD_ReturnType ret = STD_SUCCESS;
 
@@ -175,6 +145,7 @@ STD_ReturnType SPI_Tranceive(const SPI_Config_t* config, SPI_Buffer_t* buffer, u
                 // Wait until TX buffer is empty
                 uint32_t tickStart = 0;
                 while(!(SPI[config->spiNum]->SR & (1U << 1))){
+                    SYSTICK_DelayMS(1);
                     if(tickStart++ > timeout){
                         return STD_TIMEOUT;
                     }
@@ -185,12 +156,15 @@ STD_ReturnType SPI_Tranceive(const SPI_Config_t* config, SPI_Buffer_t* buffer, u
                 // Wait until RX buffer is not empty
                 tickStart = 0;
                 while(!(SPI[config->spiNum]->SR & (1U << 0))){
+                    SYSTICK_DelayMS(1);
                     if(tickStart++ > timeout){
                         return STD_TIMEOUT;
                     }
                 }
                 // Receive data
                 *(uint8_t*)&(buffer->rxData[i]) = *((volatile uint8_t*)&SPI[config->spiNum]->DR);
+                // wait BSY = 0
+                while(SPI[config->spiNum]->SR & (1U << 7));
             }
         }
         else if(config->dataFrame == SPI_DATA_FRAME_16BIT){
@@ -198,6 +172,7 @@ STD_ReturnType SPI_Tranceive(const SPI_Config_t* config, SPI_Buffer_t* buffer, u
                 // Wait until TX buffer is empty
                 uint32_t tickStart = 0;
                 while(!(SPI[config->spiNum]->SR & (1U << 1))){
+                    SYSTICK_DelayMS(1);
                     if(tickStart++ > timeout){
                         return STD_TIMEOUT;
                     }
@@ -208,17 +183,133 @@ STD_ReturnType SPI_Tranceive(const SPI_Config_t* config, SPI_Buffer_t* buffer, u
                 // Wait until RX buffer is not empty
                 tickStart = 0;
                 while(!(SPI[config->spiNum]->SR & (1U << 0))){
+                    SYSTICK_DelayMS(1);
                     if(tickStart++ > timeout){
                         return STD_TIMEOUT;
                     }
                 }
                 // Receive data
                 *((uint16_t*)&(buffer->rxData[i])) = *((volatile uint16_t*)&SPI[config->spiNum]->DR);
+                // wait BSY = 0
+                while(SPI[config->spiNum]->SR & (1U << 7));
             }
         }
         else{
             ret = STD_ERROR;
         }
+    }
+
+    return ret;
+}
+
+STD_ReturnType SPI_TranceiveIT(const SPI_Config_t* config, SPI_Buffer_t* buffer){
+    STD_ReturnType ret = STD_SUCCESS;
+    
+    if(config == NULL ||  buffer == NULL || buffer->txData == NULL || buffer->rxData == NULL || buffer->length == 0) {
+        ret = STD_ERROR;
+    }
+    else{
+        if(spiState[config->spiNum] == SPI_STATE_READY){
+            spiState[config->spiNum] = SPI_STATE_BUSY;
+            // Save Buffer Reference
+            spiBuf[config->spiNum] = buffer;
+            spiBuf[config->spiNum]->txIndex = 0;
+            spiBuf[config->spiNum]->rxIndex = 0;
+
+            // Enable SPI IRQ in NVIC
+            switch(config->spiNum){
+                case SPI_1:
+                    NVIC_EnableIRQ(SPI1_IRQn);
+                    break;
+                case SPI_2:
+                    NVIC_EnableIRQ(SPI2_IRQn);
+                    break;
+                case SPI_3:
+                    NVIC_EnableIRQ(SPI3_IRQn);
+                    break;
+                case SPI_4:
+                    NVIC_EnableIRQ(SPI4_IRQn);
+                    break;
+                default:
+                    return STD_ERROR;
+                    break;
+            }
+
+            // Enable TXE and RXNE Interrupts
+            SPI[config->spiNum]->CR2 |= (1U << 7); 
+            SPI[config->spiNum]->CR2 |= (1U << 6); 
+        }
+        else if(spiState[config->spiNum] == SPI_STATE_BUSY){
+            ret = STD_BUSY;
+        }
+        else{
+            ret = STD_ERROR;
+        }
+    }
+
+    return ret;
+}
+
+STD_ReturnType SPI_GetTXEFlag(const SPI_Config_t* config, uint8_t* status){
+    STD_ReturnType ret = STD_SUCCESS;
+
+    if(config == NULL || status == NULL){
+        ret = STD_ERROR;
+    }
+    else{
+        *status = (SPI[config->spiNum]->SR & (1U << 1)) >> 1;
+    }
+
+    return ret;
+}
+
+STD_ReturnType SPI_GetRXNEFlag(const SPI_Config_t* config, uint8_t* status){
+    STD_ReturnType ret = STD_SUCCESS;
+
+    if(config == NULL || status == NULL){
+        ret = STD_ERROR;
+    }
+    else{
+        *status = SPI[config->spiNum]->SR & 1U;
+    }
+
+    return ret;
+}
+
+STD_ReturnType SPI_GetBusyFlag(const SPI_Config_t* config, uint8_t* status){
+    STD_ReturnType ret = STD_SUCCESS;
+
+    if(config == NULL || status == NULL){
+        ret = STD_ERROR;
+    }
+    else{
+        *status = (SPI[config->spiNum]->SR & (1U << 7)) >> 7;
+    }
+
+    return ret;
+}
+
+STD_ReturnType SPI_GetState(const SPI_Config_t* config, SPI_State_t* state){
+    STD_ReturnType ret = STD_SUCCESS;
+
+    if(config == NULL || state == NULL){
+        ret = STD_ERROR;
+    }
+    else{
+        *state = spiState[config->spiNum];
+    }
+
+    return ret;
+}
+
+STD_ReturnType SPI_SetState(const SPI_Config_t* config, SPI_State_t state){
+    STD_ReturnType ret = STD_SUCCESS;
+
+    if(config == NULL){
+        ret = STD_ERROR;
+    }
+    else{
+        spiState[config->spiNum] = state;
     }
 
     return ret;
@@ -248,6 +339,73 @@ STD_ReturnType SPI_SetRxDMA(const SPI_Config_t* config, uint8_t enable){
     }
 
     return ret;
+}
+
+void SPI1_IRQHandler(void){
+    volatile static uint8_t whoIsNext = 0;
+    if(SPI[SPI_1]->SR & (1U << 1) && whoIsNext == 0){ // TXE Interrupt
+        if(spiBuf[SPI_1]->txIndex < spiBuf[SPI_1]->length){
+            // Send next data
+            if(((SPI[SPI_1]->CR1 >> 11) & 0x1) == SPI_DATA_FRAME_16BIT){
+                *((volatile uint16_t*)&SPI[SPI_1]->DR) = *((uint16_t*)&(spiBuf[SPI_1]->txData[spiBuf[SPI_1]->txIndex]));
+                spiBuf[SPI_1]->txIndex += 2;
+            }
+            else{
+                *((volatile uint8_t*)&SPI[SPI_1]->DR) = *(uint8_t*)&(spiBuf[SPI_1]->txData[spiBuf[SPI_1]->txIndex]);
+                spiBuf[SPI_1]->txIndex += 1;
+            }
+            whoIsNext = 1;
+        }
+        else{
+            // All data transmitted -> wait for receiveing to complete
+        }
+    }
+    if(SPI[SPI_1]->SR & (1U << 0) && whoIsNext == 1){ // RXNE Interrupt
+        if(spiBuf[SPI_1]->rxIndex < spiBuf[SPI_1]->length){
+            // Receive next data
+            if(((SPI[SPI_1]->CR1 >> 11) & 0x1) == SPI_DATA_FRAME_16BIT){
+                *((uint16_t*)&(spiBuf[SPI_1]->rxData[spiBuf[SPI_1]->rxIndex])) = *((volatile uint16_t*)&SPI[SPI_1]->DR);
+                spiBuf[SPI_1]->rxIndex += 2;
+            }
+            else{
+                *(uint8_t*)&(spiBuf[SPI_1]->rxData[spiBuf[SPI_1]->rxIndex]) = *((volatile uint8_t*)&SPI[SPI_1]->DR);
+                spiBuf[SPI_1]->rxIndex += 1;
+            }
+            whoIsNext = 0;
+            // if all received -> disable rxne & set state to ready & call callback
+            if(spiBuf[SPI_1]->rxIndex >= spiBuf[SPI_1]->length){
+                // Disable TXE & RXNE Interrupt & NVIC IRQ
+                SPI[SPI_1]->CR2 &= ~((1U << 7) | (1U << 6));
+                NVIC_DisableIRQ(SPI1_IRQn);
+
+                spiState[SPI_1] = SPI_STATE_READY;
+                if(NULL != SPI1_Callback[SPI_1]){
+                    SPI1_Callback[SPI_1]();
+                }
+            }
+        }
+        else{
+
+        }
+    }
+}
+
+void SPI2_IRQHandler(void){
+    if(NULL != SPI1_Callback[SPI_2]){
+        SPI1_Callback[SPI_2]();
+    }
+}
+
+void SPI3_IRQHandler(void){
+    if(NULL != SPI1_Callback[SPI_3]){
+        SPI1_Callback[SPI_3]();
+    }
+}
+
+void SPI4_IRQHandler(void){
+    if(NULL != SPI1_Callback[SPI_4]){
+        SPI1_Callback[SPI_4]();
+    }
 }
 
 static STD_ReturnType SPI_GPIO_Config(SPI_Number_t spiNum, SPI_Mode_t mode){

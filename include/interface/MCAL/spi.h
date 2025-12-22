@@ -62,10 +62,20 @@ typedef enum{
 #define SPI_DMA_ENABLE      1U
 #define SPI_DMA_DISABLE     0U
 
+typedef void (*SPI_Callback_t)(void);
+
+typedef enum{
+    SPI_STATE_READY = 0,
+    SPI_STATE_BUSY,
+    SPI_STATE_ERROR
+} SPI_State_t;
+
 typedef struct{
     uint8_t* txData;
     uint8_t* rxData;
     uint8_t length;
+    uint8_t txIndex;
+    uint8_t rxIndex;
 } SPI_Buffer_t;
 
 typedef struct{
@@ -78,10 +88,22 @@ typedef struct{
     SPI_FrameFormat_t frameFormat;
     SPI_BaudRatePrescaler_t baudRatePrescaler;
     SPI_FrameFormatStandard_t frameFormatStandard;
+    SPI_Callback_t trancieveCallback;
 } SPI_Config_t;
 
 STD_ReturnType SPI_Init(const SPI_Config_t* config, SYSTICK_ClockSource_t clockSource);
 STD_ReturnType SPI_DeInit(const SPI_Config_t* config);
-STD_ReturnType SPI_Transmit(const SPI_Config_t* config, SPI_Buffer_t* buffer, uint32_t timeout);
+// Transmit & Receive Synchronously
 STD_ReturnType SPI_Tranceive(const SPI_Config_t* config, SPI_Buffer_t* buffer, uint32_t timeout);
+// Transmit & Receive Using Interrupts
+STD_ReturnType SPI_TranceiveIT(const SPI_Config_t* config, SPI_Buffer_t* buffer);
+// SPI Gettters & Setters
+STD_ReturnType SPI_GetTXEFlag(const SPI_Config_t* config, uint8_t* status);
+STD_ReturnType SPI_GetRXNEFlag(const SPI_Config_t* config, uint8_t* status);
+STD_ReturnType SPI_GetBusyFlag(const SPI_Config_t* config, uint8_t* status);
+STD_ReturnType SPI_SetState(const SPI_Config_t* config, SPI_State_t state);
+STD_ReturnType SPI_GetState(const SPI_Config_t* config, SPI_State_t* state);
+STD_ReturnType SPI_SetTxDMA(const SPI_Config_t* config, uint8_t enable);
+STD_ReturnType SPI_SetRxDMA(const SPI_Config_t* config, uint8_t enable);
+
 #endif // SPI_H
