@@ -332,7 +332,7 @@ static STD_ReturnType DMA_NVIC_IRQ_Disable(uint8_t dmaNum, uint8_t streamNum){
 void static DMA_IRQ_Handler(uint8_t dmaNum, uint8_t streamNum, uint8_t bitOffset){
     volatile uint32_t *Flag;
     volatile uint32_t *ClrFlag;
-
+    // Determine which ISR and IFCR to use based on dma & stream number
     if(streamNum <= 3){
         Flag  = &DMA[dmaNum]->LISR;
         ClrFlag = &DMA[dmaNum]->LIFCR;
@@ -353,7 +353,7 @@ void static DMA_IRQ_Handler(uint8_t dmaNum, uint8_t streamNum, uint8_t bitOffset
             return;
         }
     }
-
+    // Transmission Complete
     if(((*Flag) & (1 << (bitOffset + DMA_CR_TCIE_BIT + 1))) && (DMA[dmaNum]->STREAM[streamNum].CR & (1 << DMA_CR_TCIE_BIT))){
         *ClrFlag |= (1 << (bitOffset + DMA_CR_TCIE_BIT + 1));
         dmaState[dmaNum][streamNum] = DMA_STATE_READY;
@@ -361,18 +361,21 @@ void static DMA_IRQ_Handler(uint8_t dmaNum, uint8_t streamNum, uint8_t bitOffset
             dmaCombCallback[dmaNum][streamNum]();
         }
     }
+    // Half Transmission Complete
     if(((*Flag) & (1 << (bitOffset + DMA_CR_HTIE_BIT + 1))) && (DMA[dmaNum]->STREAM[streamNum].CR & (1 << DMA_CR_HTIE_BIT))){
         *ClrFlag |= (1 << (bitOffset + DMA_CR_HTIE_BIT + 1));
         if(dmaHalfCallback[dmaNum][streamNum] != NULL){
             dmaHalfCallback[dmaNum][streamNum]();
         }
     }
+    // Transmission Error
     if(((*Flag) & (1 << (bitOffset + DMA_CR_TEIE_BIT + 1))) && (DMA[dmaNum]->STREAM[streamNum].CR & (1 << DMA_CR_TEIE_BIT))){
         *ClrFlag |= (1 << (bitOffset + DMA_CR_TEIE_BIT + 1));
         if(dmaErrCallback[dmaNum][streamNum] != NULL){
             dmaErrCallback[dmaNum][streamNum]();
         }
     }
+    // Direct Mode Error
     if(((*Flag) & (1 << (bitOffset + DMA_CR_DMEIE_BIT + 1))) && (DMA[dmaNum]->STREAM[streamNum].CR & (1 << DMA_CR_DMEIE_BIT))){
         *ClrFlag |= (1 << (bitOffset + DMA_CR_DMEIE_BIT + 1));
         if(dmaDirectErrCallback[dmaNum][streamNum] != NULL){
@@ -413,7 +416,6 @@ void DMA1_Stream6_IRQHandler(void){
 void DMA1_Stream7_IRQHandler(void){
     DMA_IRQ_Handler(DMA_1, DMA_STREAM_7, 22);
 }
-
 
 
 void DMA2_Stream0_IRQHandler(void){
