@@ -18,8 +18,8 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
-uint8_t d1[12] = "Ehab1234567"; 
-uint8_t d2[12] = {0}; 
+uint8_t d1[12] = "My SPI Works"; 
+uint8_t d2[12] = {0};
 
 SPI_Config_t spi1 = {
     .spiNum = SPI_1,

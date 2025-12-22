@@ -73,7 +73,10 @@ STD_ReturnType SPI_Init(const SPI_Config_t* config, SYSTICK_ClockSource_t clockS
         }
 
         // 9. Configure GPIO Pins for SPI Functionality
-        SPI_GPIO_Config(config->spiNum, config->mode);
+        ret = SPI_GPIO_Config(config->spiNum, config->mode);
+        if(ret != STD_SUCCESS){
+            return ret;
+        }
 
         // 10. Enable SPI Peripheral
         SPI[config->spiNum]->CR1 |= (1U << 6);
@@ -294,16 +297,21 @@ static STD_ReturnType SPI_GPIO_Config(SPI_Number_t spiNum, SPI_Mode_t mode){
             if(ret != STD_SUCCESS){
                 return ret;
             }
-            spi1_ss_pin = (GPIO_t){
-                .port = GPIO_PORTA,
-                .pin = GPIO_PIN_4,
-                .mode = GPIO_MODE_AF,
-                .speed = GPIO_SPEED_HIGH,
-                .outputType = GPIO_OUTPUT_PUSHPULL,
-                .pullType = GPIO_NOPULL,
-                .altFunc = GPIO_AF5_SPI1_2
-            };
-            ret = GPIO_Init(&spi1_ss_pin);
+            if(mode == SPI_MODE_SLAVE){
+                spi1_ss_pin = (GPIO_t){
+                    .port = GPIO_PORTA,
+                    .pin = GPIO_PIN_4,
+                    .mode = GPIO_MODE_AF,
+                    .speed = GPIO_SPEED_HIGH,
+                    .outputType = GPIO_OUTPUT_PUSHPULL,
+                    .pullType = GPIO_NOPULL,
+                    .altFunc = GPIO_AF5_SPI1_2
+                };
+                ret = GPIO_Init(&spi1_ss_pin);
+            }
+            else{
+                // Nothing -> Master mode handles SS pin via software
+            }
             break;
 
         case SPI_2:
@@ -346,17 +354,23 @@ static STD_ReturnType SPI_GPIO_Config(SPI_Number_t spiNum, SPI_Mode_t mode){
             if(ret != STD_SUCCESS){
                 return ret;
             }
-            spi2_ss_pin = (GPIO_t){
-                .port = GPIO_PORTB,
-                .pin = GPIO_PIN_12,
-                .mode = GPIO_MODE_AF,
-                .speed = GPIO_SPEED_HIGH,
-                .outputType = GPIO_OUTPUT_PUSHPULL,
-                .pullType = GPIO_NOPULL,
-                .altFunc = GPIO_AF5_SPI1_2
-            };
-            ret = GPIO_Init(&spi2_ss_pin);
+            if(mode == SPI_MODE_SLAVE){
+                spi2_ss_pin = (GPIO_t){
+                    .port = GPIO_PORTB,
+                    .pin = GPIO_PIN_12,
+                    .mode = GPIO_MODE_AF,
+                    .speed = GPIO_SPEED_HIGH,
+                    .outputType = GPIO_OUTPUT_PUSHPULL,
+                    .pullType = GPIO_NOPULL,
+                    .altFunc = GPIO_AF5_SPI1_2
+                };
+                ret = GPIO_Init(&spi2_ss_pin);
+            }
+            else{
+                // Nothing -> Master mode handles SS pin via software
+            }
             break;
+
         case SPI_3:
             spi_mosi = (GPIO_t){
                 .port = GPIO_PORTB,
@@ -397,17 +411,23 @@ static STD_ReturnType SPI_GPIO_Config(SPI_Number_t spiNum, SPI_Mode_t mode){
             if(ret != STD_SUCCESS){
                 return ret;
             }
-            spi3_ss_pin = (GPIO_t){
-                .port = GPIO_PORTB,
-                .pin = GPIO_PIN_9,
-                .mode = GPIO_MODE_AF,
-                .speed = GPIO_SPEED_HIGH,
-                .outputType = GPIO_OUTPUT_PUSHPULL,
-                .pullType = GPIO_NOPULL,
-                .altFunc = GPIO_AF6_SPI3
-            };
-            ret = GPIO_Init(&spi3_ss_pin);
+            if(mode == SPI_MODE_SLAVE){
+                spi3_ss_pin = (GPIO_t){
+                    .port = GPIO_PORTB,
+                    .pin = GPIO_PIN_6,
+                    .mode = GPIO_MODE_AF,
+                    .speed = GPIO_SPEED_HIGH,
+                    .outputType = GPIO_OUTPUT_PUSHPULL,
+                    .pullType = GPIO_NOPULL,
+                    .altFunc = GPIO_AF6_SPI3
+                };
+                ret = GPIO_Init(&spi3_ss_pin);
+            }
+            else{
+                // Nothing -> Master mode handles SS pin via software
+            }
             break;
+
         case SPI_4:
             // Not available on STM32F401 Discovery Board
             break;
