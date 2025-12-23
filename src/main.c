@@ -12,6 +12,7 @@
 #include "interface/HAL/hserial.h"
 #include "interface/MCAL/spi.h"
 #include "interface/HAL/hspi.h"
+#include "interface/MCAL/wdt.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -104,10 +105,10 @@ int main(){
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-    ret = HSPI_Init(&hspi1_dma);
+    ret = WDT_Init(WDT_PRESCALER_32, 2500);
 
     while(1){
-        ret = HSPI_StartTranceiveDMA(&hspi1_dma, &buffer);
+        LED_Toggle(LED_1);
         SYSTICK_DelayMS(500);
     }
     
