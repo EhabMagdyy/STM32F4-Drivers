@@ -224,4 +224,11 @@ STD_ReturnType RCC_SetHSEBypass(RCC_Status_t status);
  */
 STD_ReturnType RCC_SetClockSecurity(RCC_Status_t status);
 
+/*
+ * @brief  Enable/Disable the Low-Speed Internal (LSI) oscillator.
+ * @param  status: RCC_ENABLE to enable LSI, RCC_DISABLE to disable LSI.
+ * @retval STD_SUCCESS if LSI was set successfully, otherwise STD_ERROR.
+ */
+STD_ReturnType RCC_SetLSI(RCC_Status_t status);
+
 #endif // RCC_H

@@ -565,3 +565,19 @@ STD_ReturnType RCC_SetClockSecurity(RCC_Status_t status){
     RCC->CR.BITS.CSSON = status;
     return ret;
 }
+
+STD_ReturnType RCC_SetLSI(RCC_Status_t status)
+{
+    if (status == RCC_ENABLE){
+        RCC->CSR.BITS.LSION = RCC_ENABLE;
+        while(RCC->CSR.BITS.LSIRDY == 0);
+    }
+    else if (status == RCC_DISABLE){
+        RCC->CSR.BITS.LSION = RCC_DISABLE;
+    }
+    else{
+        return STD_ERROR;
+    }
+
+    return STD_SUCCESS;
+}
