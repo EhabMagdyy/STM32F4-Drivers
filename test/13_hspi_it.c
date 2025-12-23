@@ -41,8 +41,8 @@ SPI_Config_t spi1 = {
     .direction = SPI_DIRECTION_2LINES,
     .frameFormat = SPI_FRAME_FORMAT_MSB_FIRST,
     .frameFormatStandard = SPI_FRAME_FORMAT_MOTOROLA,
-    .trancieveCallback = NULL,
-    .dmaEnable = SPI_DMA_ENABLE
+    .trancieveCallback = spiCallback,
+    .dmaEnable = SPI_DMA_DISABLE
 };
 
 DMA_Instance_t dmaInstanceTx = {
@@ -58,7 +58,7 @@ DMA_Instance_t dmaInstanceTx = {
     .memSize = DMA_MEM_SIZE_8BIT,
     .periphSize = DMA_PERIPH_SIZE_8BIT,
     .interruptConf = DMA_IT_COMPLETE,
-    .combleteCallback = NULL,
+    .combleteCallback = spiCallback,
     .halfCallback = NULL,
     .errorCallback = NULL,
     .directErrorCallback = NULL
@@ -91,8 +91,8 @@ SPI_Buffer_t buffer = {
 
 HSPI_DMA_t hspi1_dma = {
     .spiConfig = &spi1,
-    .txChannel = &dmaInstanceTx,
-    .rxChannel = &dmaInstanceRx
+    .txChannel = NULL,
+    .rxChannel = NULL
 };
 
 int main(){
@@ -107,8 +107,8 @@ int main(){
     ret = HSPI_Init(&hspi1_dma, SYSTICK_CLOCK_SOURCE_PLL_MAX);
 
     while(1){
-        ret = HSPI_StartTranceiveDMA(&hspi1_dma, &buffer);
-        SYSTICK_DelayMS(100);
+        ret = HSPI_StartTranceiveIT(&hspi1_dma, &buffer);
+        SYSTICK_DelayMS(50);
     }
     
     return 0;
