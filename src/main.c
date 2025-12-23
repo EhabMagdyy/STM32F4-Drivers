@@ -11,6 +11,7 @@
 #include "interface/MCAL/dma.h"
 #include "interface/HAL/hserial.h"
 #include "interface/MCAL/spi.h"
+#include "interface/HAL/hspi.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -40,13 +41,58 @@ SPI_Config_t spi1 = {
     .direction = SPI_DIRECTION_2LINES,
     .frameFormat = SPI_FRAME_FORMAT_MSB_FIRST,
     .frameFormatStandard = SPI_FRAME_FORMAT_MOTOROLA,
-    .trancieveCallback = spiCallback
+    .trancieveCallback = spiCallback,
+    .dmaEnable = SPI_DMA_ENABLE
+};
+
+DMA_Instance_t dmaInstanceTx = {
+    .dmaNum = DMA_2,
+    .stream = DMA_STREAM_3,
+    .channel = DMA_CHANNEL_3,
+    .direction = DMA_MEMORY_TO_PERIPHERAL,
+    .memInc = DMA_MEM_INC_ENABLE,
+    .periphInc = DMA_PERIPH_INC_DISABLE,
+    .priority = DMA_PRIORITY_LOW,
+    .memBurst = DMA_MEM_BURST_SINGLE,
+    .periphBurst = DMA_PERIPH_BURST_SINGLE,
+    .memSize = DMA_MEM_SIZE_8BIT,
+    .periphSize = DMA_PERIPH_SIZE_8BIT,
+    .interruptConf = DMA_IT_COMPLETE,
+    .combleteCallback = NULL,
+    .halfCallback = NULL,
+    .errorCallback = NULL,
+    .directErrorCallback = NULL
+};
+
+DMA_Instance_t dmaInstanceRx = {
+    .dmaNum = DMA_2,
+    .stream = DMA_STREAM_2,
+    .channel = DMA_CHANNEL_3,
+    .direction = DMA_PERIPHERAL_TO_MEMORY,
+    .memInc = DMA_MEM_INC_ENABLE,
+    .periphInc = DMA_PERIPH_INC_DISABLE,
+    .priority = DMA_PRIORITY_LOW,
+    .memBurst = DMA_MEM_BURST_SINGLE,
+    .periphBurst = DMA_PERIPH_BURST_SINGLE,
+    .memSize = DMA_MEM_SIZE_8BIT,
+    .periphSize = DMA_PERIPH_SIZE_8BIT,
+    .interruptConf = DMA_IT_COMPLETE,
+    .combleteCallback = spiCallback,
+    .halfCallback = NULL,
+    .errorCallback = NULL,
+    .directErrorCallback = NULL
 };
 
 SPI_Buffer_t buffer = {
     .txData = d1,
     .rxData = d2,
     .length = 12
+};
+
+HSPI_DMA_t hspi1_dma = {
+    .spiConfig = &spi1,
+    .txChannel = &dmaInstanceTx,
+    .rxChannel = &dmaInstanceRx
 };
 
 int main(){
@@ -58,10 +104,10 @@ int main(){
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-    ret = SPI_Init(&spi1, SYSTICK_CLOCK_SOURCE_PLL_MAX);
+    ret = HSPI_Init(&hspi1_dma, SYSTICK_CLOCK_SOURCE_PLL_MAX);
 
     while(1){
-        ret = SPI_TranceiveIT(&spi1, &buffer);
+        ret = HSPI_StartTranceive(&hspi1_dma, &buffer);
         SYSTICK_DelayMS(1000);
     }
     
