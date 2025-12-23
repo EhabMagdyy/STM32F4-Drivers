@@ -431,55 +431,6 @@ uint32_t SPI_DRAddress(SPI_Number_t spiNum){
     return (uint32_t)&(SPI[spiNum]->DR);
 }
 
-// void SPI1_IRQHandler(void){
-//     volatile static uint8_t whoIsNext = 0;
-//     if(SPI[SPI_1]->SR & (1U << 1) && whoIsNext == 0){ // TXE Interrupt
-//         if(spiBuf[SPI_1]->txIndex < spiBuf[SPI_1]->length){
-//             // Send next data
-//             if(((SPI[SPI_1]->CR1 >> 11) & 0x1) == SPI_DATA_FRAME_16BIT){
-//                 *((volatile uint16_t*)&SPI[SPI_1]->DR) = *((uint16_t*)&(spiBuf[SPI_1]->txData[spiBuf[SPI_1]->txIndex]));
-//                 spiBuf[SPI_1]->txIndex += 2;
-//             }
-//             else{
-//                 *((volatile uint8_t*)&SPI[SPI_1]->DR) = *(uint8_t*)&(spiBuf[SPI_1]->txData[spiBuf[SPI_1]->txIndex]);
-//                 spiBuf[SPI_1]->txIndex += 1;
-//             }
-//             whoIsNext = 1;
-//         }
-//         else{
-//             // All data transmitted -> wait for receiveing to complete
-//         }
-//     }
-//     if(SPI[SPI_1]->SR & (1U << 0) && whoIsNext == 1){ // RXNE Interrupt
-//         if(spiBuf[SPI_1]->rxIndex < spiBuf[SPI_1]->length){
-//             // Receive next data
-//             if(((SPI[SPI_1]->CR1 >> 11) & 0x1) == SPI_DATA_FRAME_16BIT){
-//                 *((uint16_t*)&(spiBuf[SPI_1]->rxData[spiBuf[SPI_1]->rxIndex])) = *((volatile uint16_t*)&SPI[SPI_1]->DR);
-//                 spiBuf[SPI_1]->rxIndex += 2;
-//             }
-//             else{
-//                 *(uint8_t*)&(spiBuf[SPI_1]->rxData[spiBuf[SPI_1]->rxIndex]) = *((volatile uint8_t*)&SPI[SPI_1]->DR);
-//                 spiBuf[SPI_1]->rxIndex += 1;
-//             }
-//             whoIsNext = 0;
-//             // if all received -> disable rxne & set state to ready & call callback
-//             if(spiBuf[SPI_1]->rxIndex >= spiBuf[SPI_1]->length){
-//                 // Disable TXE & RXNE Interrupt & NVIC IRQ
-//                 SPI[SPI_1]->CR2 &= ~((1U << 7) | (1U << 6));
-//                 NVIC_DisableIRQ(SPI1_IRQn);
-
-//                 spiState[SPI_1] = SPI_STATE_READY;
-//                 if(NULL != SPI1_Callback[SPI_1]){
-//                     SPI1_Callback[SPI_1]();
-//                 }
-//             }
-//         }
-//         else{
-
-//         }
-//     }
-// }
-
 void SPI1_IRQHandler(void){
     SPI1_ITHandler();
 }
