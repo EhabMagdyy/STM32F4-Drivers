@@ -102,10 +102,18 @@ STD_ReturnType SPI_Tranceive(const SPI_Config_t* config, SPI_Buffer_t* buffer, u
 // Transmit & Receive Using Interrupts
 STD_ReturnType SPI_TranceiveIT(const SPI_Config_t* config, SPI_Buffer_t* buffer);
 // SPI Gettters & Setters
-STD_ReturnType SPI_GetTXEFlag(const SPI_Config_t* config, uint8_t* status);
-STD_ReturnType SPI_GetRXNEFlag(const SPI_Config_t* config, uint8_t* status);
-STD_ReturnType SPI_GetBusyFlag(const SPI_Config_t* config, uint8_t* status);
-STD_ReturnType SPI_SetState(const SPI_Config_t* config, SPI_State_t state);
-STD_ReturnType SPI_GetState(const SPI_Config_t* config, SPI_State_t* state);
+STD_ReturnType SPI_GetTXEFlag(SPI_Number_t spiNum, uint8_t* status);
+STD_ReturnType SPI_GetRXNEFlag(SPI_Number_t spiNum, uint8_t* status);
+STD_ReturnType SPI_GetBusyFlag(SPI_Number_t spiNum, uint8_t* status);
+STD_ReturnType SPI_SetState(SPI_Number_t spiNum, uint8_t state);
+STD_ReturnType SPI_GetState(SPI_Number_t spiNum, uint8_t* state);
+STD_ReturnType SPI_NVIC_IRQ_Enable(SPI_Number_t spiNum);
+STD_ReturnType SPI_NVIC_TXE_RXNE_Disable(SPI_Number_t spiNum);
+STD_ReturnType SPI_GetDataSize(SPI_Number_t spiNum, uint8_t* dataSize);
+STD_ReturnType SPI_GetDR8Bits(SPI_Number_t spiNum, uint8_t* data);
+STD_ReturnType SPI_SetDR8Bits(SPI_Number_t spiNum, uint8_t* data);
+STD_ReturnType SPI_GetDR16Bits(SPI_Number_t spiNum, uint8_t* data);
+STD_ReturnType SPI_SetDR16Bits(SPI_Number_t spiNum, uint8_t* data);
+uint32_t SPI_DRAddress(SPI_Number_t spiNum);
 
 #endif // SPI_H
