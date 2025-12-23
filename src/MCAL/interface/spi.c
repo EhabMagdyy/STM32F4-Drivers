@@ -85,11 +85,20 @@ STD_ReturnType SPI_Init(const SPI_Config_t* config, SYSTICK_ClockSource_t clockS
         // 10. Set Callback Function
         SPI1_Callback[config->spiNum] = config->trancieveCallback;
 
-        // 11. Set Initial State
+        // 11. Configure DMA if enabled
+        if(config->dmaEnable == SPI_DMA_ENABLE){
+            SPI[config->spiNum]->CR2 |= (1U << 1);
+            SPI[config->spiNum]->CR2 |= (1U << 0);
+        }
+        else{
+            // Nothing
+        }
+
+        // 12. Set Initial State
         spiState[config->spiNum] = SPI_STATE_READY;
         spiBuf[config->spiNum] = NULL;
 
-        // 12. Enable SPI Peripheral
+        // 13. Enable SPI Peripheral
         SPI[config->spiNum]->CR1 |= (1U << 6);
     }
 
@@ -310,32 +319,6 @@ STD_ReturnType SPI_SetState(const SPI_Config_t* config, SPI_State_t state){
     }
     else{
         spiState[config->spiNum] = state;
-    }
-
-    return ret;
-}
-
-STD_ReturnType SPI_SetTxDMA(const SPI_Config_t* config, uint8_t enable){
-    STD_ReturnType ret = STD_SUCCESS;
-
-    if(config == NULL){
-        ret = STD_ERROR;
-    }
-    else{
-        SPI[config->spiNum]->CR2 |= ((enable & 0x1) << 1);
-    }
-
-    return ret;
-}
-
-STD_ReturnType SPI_SetRxDMA(const SPI_Config_t* config, uint8_t enable){
-    STD_ReturnType ret = STD_SUCCESS;
-
-    if(config == NULL){
-        ret = STD_ERROR;
-    }
-    else{
-        SPI[config->spiNum]->CR2 |= ((enable & 0x1) << 0);
     }
 
     return ret;

@@ -70,6 +70,9 @@ typedef enum{
     SPI_STATE_ERROR
 } SPI_State_t;
 
+#define SPI_DMA_ENABLE      1U
+#define SPI_DMA_DISABLE     0U
+
 typedef struct{
     uint8_t* txData;
     uint8_t* rxData;
@@ -89,6 +92,7 @@ typedef struct{
     SPI_BaudRatePrescaler_t baudRatePrescaler;
     SPI_FrameFormatStandard_t frameFormatStandard;
     SPI_Callback_t trancieveCallback;
+    uint8_t dmaEnable;
 } SPI_Config_t;
 
 STD_ReturnType SPI_Init(const SPI_Config_t* config, SYSTICK_ClockSource_t clockSource);
@@ -103,7 +107,5 @@ STD_ReturnType SPI_GetRXNEFlag(const SPI_Config_t* config, uint8_t* status);
 STD_ReturnType SPI_GetBusyFlag(const SPI_Config_t* config, uint8_t* status);
 STD_ReturnType SPI_SetState(const SPI_Config_t* config, SPI_State_t state);
 STD_ReturnType SPI_GetState(const SPI_Config_t* config, SPI_State_t* state);
-STD_ReturnType SPI_SetTxDMA(const SPI_Config_t* config, uint8_t enable);
-STD_ReturnType SPI_SetRxDMA(const SPI_Config_t* config, uint8_t enable);
 
 #endif // SPI_H
