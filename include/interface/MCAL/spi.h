@@ -2,7 +2,6 @@
 #define SPI_H
 
 #include "../../../lib/STD_Types.h"
-#include "interface/Core/systick.h"
 
 typedef enum{
     SPI_1 = 0,
@@ -95,7 +94,7 @@ typedef struct{
     uint8_t dmaEnable;
 } SPI_Config_t;
 
-STD_ReturnType SPI_Init(const SPI_Config_t* config, SYSTICK_ClockSource_t clockSource);
+STD_ReturnType SPI_Init(const SPI_Config_t* config);
 STD_ReturnType SPI_DeInit(const SPI_Config_t* config);
 // Transmit & Receive Synchronously
 STD_ReturnType SPI_Tranceive(const SPI_Config_t* config, SPI_Buffer_t* buffer, uint32_t timeout);

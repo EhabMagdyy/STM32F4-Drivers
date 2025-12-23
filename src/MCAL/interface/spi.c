@@ -20,7 +20,7 @@ static GPIO_t spi3_ss_pin;
 volatile SPI_State_t spiState[4];
 volatile SPI_Buffer_t* spiBuf[4];
 
-STD_ReturnType SPI_Init(const SPI_Config_t* config, SYSTICK_ClockSource_t clockSource){
+STD_ReturnType SPI_Init(const SPI_Config_t* config){
     STD_ReturnType ret = STD_SUCCESS;
 
     if(config == NULL){
@@ -47,13 +47,7 @@ STD_ReturnType SPI_Init(const SPI_Config_t* config, SYSTICK_ClockSource_t clockS
         }
 
         // 2. Set Baud Rate Prescaler
-        // SPI1 & SPI4 Max is 42MHz - SPI2 & SPI3 Max is 21MHz
-        if(clockSource == SYSTICK_CLOCK_SOURCE_PLL_MAX && (config->spiNum == SPI_2 || config->spiNum == SPI_3) && config->baudRatePrescaler == SPI_BAUDRATE_PRESCALER_4){
-            SPI[config->spiNum]->CR1 |= (SPI_BAUDRATE_PRESCALER_4 << 3); // Set prescaler to 4
-        }
-        else{
-            SPI[config->spiNum]->CR1 |= ((config->baudRatePrescaler & 0x7) << 3); // Just set prescaler bits
-        }
+        SPI[config->spiNum]->CR1 |= ((config->baudRatePrescaler & 0x7) << 3);
 
         // 3. Frame Format Standard
         SPI[config->spiNum]->CR2 &= ~((config->frameFormatStandard & 0x1) << 4);

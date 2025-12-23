@@ -14,12 +14,11 @@ typedef struct{
  * @brief  Initialize SPI peripheral with DMA support.
  *
  * @param[in]  config       Pointer to HSPI DMA configuration structure.
- * @param[in]  clockSource  SysTick clock source used for handling baudrate.
  *
  * @retval STD_SUCCESS  Initialization completed successfully.
  * @retval STD_ERROR    Invalid configuration pointer or initialization failure.
  */
-STD_ReturnType HSPI_Init(const HSPI_DMA_t* config, SYSTICK_ClockSource_t clockSource);
+STD_ReturnType HSPI_Init(const HSPI_DMA_t* config);
 
 /**
  * @brief  De-initialize SPI peripheral and associated DMA channels.

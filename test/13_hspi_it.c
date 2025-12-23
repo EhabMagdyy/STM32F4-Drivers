@@ -58,7 +58,7 @@ DMA_Instance_t dmaInstanceTx = {
     .memSize = DMA_MEM_SIZE_8BIT,
     .periphSize = DMA_PERIPH_SIZE_8BIT,
     .interruptConf = DMA_IT_COMPLETE,
-    .combleteCallback = spiCallback,
+    .combleteCallback = NULL,
     .halfCallback = NULL,
     .errorCallback = NULL,
     .directErrorCallback = NULL
@@ -104,11 +104,11 @@ int main(){
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-    ret = HSPI_Init(&hspi1_dma, SYSTICK_CLOCK_SOURCE_PLL_MAX);
+    ret = HSPI_Init(&hspi1_dma);
 
     while(1){
         ret = HSPI_StartTranceiveIT(&hspi1_dma, &buffer);
-        SYSTICK_DelayMS(50);
+        SYSTICK_DelayMS(100);
     }
     
     return 0;

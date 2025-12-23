@@ -104,11 +104,11 @@ int main(){
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-    ret = HSPI_Init(&hspi1_dma, SYSTICK_CLOCK_SOURCE_PLL_MAX);
+    ret = HSPI_Init(&hspi1_dma);
 
     while(1){
         ret = HSPI_StartTranceiveDMA(&hspi1_dma, &buffer);
-        SYSTICK_DelayMS(100);
+        SYSTICK_DelayMS(500);
     }
     
     return 0;

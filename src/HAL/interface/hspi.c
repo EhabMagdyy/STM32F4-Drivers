@@ -76,14 +76,14 @@ void SPI4_ITHandler(void){
     SPI_ITHandler(SPI_4);
 }
 
-STD_ReturnType HSPI_Init(const HSPI_DMA_t* config, SYSTICK_ClockSource_t clockSource){
+STD_ReturnType HSPI_Init(const HSPI_DMA_t* config){
     STD_ReturnType ret = STD_SUCCESS;
 
     if(config == NULL){
         ret = STD_ERROR;
     }
     else{
-        ret = SPI_Init(config->spiConfig, clockSource);
+        ret = SPI_Init(config->spiConfig);
         // Set Callback Function
         SPI1_Callback[config->spiConfig->spiNum] = config->spiConfig->trancieveCallback;
         if(ret != STD_SUCCESS){
