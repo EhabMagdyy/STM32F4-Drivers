@@ -13,87 +13,12 @@
 #include "interface/MCAL/spi.h"
 #include "interface/HAL/hspi.h"
 #include "interface/MCAL/wdt.h"
+#include "interface/MCAL/crc.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
     .pllClkSource = RCC_CLOCK_SOURCE_HSE,
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
-};
-
-uint8_t d1[12] = "My SPI Works"; 
-uint8_t d2[12] = {0};
-
-void spiCallback(void){
-    if(d2[0] == 'M'){
-        LED_Toggle(LED_0);
-    }
-    if(d2[11] == 's'){
-        LED_Toggle(LED_1);
-    }
-}
-
-SPI_Config_t spi1 = {
-    .spiNum = SPI_1,
-    .mode = SPI_MODE_MASTER,
-    .dataFrame = SPI_DATA_FRAME_8BIT,
-    .baudRatePrescaler = SPI_BAUDRATE_PRESCALER_4,
-    .clockPhase = SPI_CLOCK_PHASE_1EDGE,
-    .clockPolarity = SPI_CLOCK_POLARITY_LOW,
-    .direction = SPI_DIRECTION_2LINES,
-    .frameFormat = SPI_FRAME_FORMAT_MSB_FIRST,
-    .frameFormatStandard = SPI_FRAME_FORMAT_MOTOROLA,
-    .trancieveCallback = NULL,
-    .dmaEnable = SPI_DMA_ENABLE
-};
-
-DMA_Instance_t dmaInstanceTx = {
-    .dmaNum = DMA_2,
-    .stream = DMA_STREAM_3,
-    .channel = DMA_CHANNEL_3,
-    .direction = DMA_MEMORY_TO_PERIPHERAL,
-    .memInc = DMA_MEM_INC_ENABLE,
-    .periphInc = DMA_PERIPH_INC_DISABLE,
-    .priority = DMA_PRIORITY_LOW,
-    .memBurst = DMA_MEM_BURST_SINGLE,
-    .periphBurst = DMA_PERIPH_BURST_SINGLE,
-    .memSize = DMA_MEM_SIZE_8BIT,
-    .periphSize = DMA_PERIPH_SIZE_8BIT,
-    .interruptConf = DMA_IT_COMPLETE,
-    .combleteCallback = NULL,
-    .halfCallback = NULL,
-    .errorCallback = NULL,
-    .directErrorCallback = NULL
-};
-
-DMA_Instance_t dmaInstanceRx = {
-    .dmaNum = DMA_2,
-    .stream = DMA_STREAM_2,
-    .channel = DMA_CHANNEL_3,
-    .direction = DMA_PERIPHERAL_TO_MEMORY,
-    .memInc = DMA_MEM_INC_ENABLE,
-    .periphInc = DMA_PERIPH_INC_DISABLE,
-    .priority = DMA_PRIORITY_LOW,
-    .memBurst = DMA_MEM_BURST_SINGLE,
-    .periphBurst = DMA_PERIPH_BURST_SINGLE,
-    .memSize = DMA_MEM_SIZE_8BIT,
-    .periphSize = DMA_PERIPH_SIZE_8BIT,
-    .interruptConf = DMA_IT_COMPLETE,
-    .combleteCallback = spiCallback,
-    .halfCallback = NULL,
-    .errorCallback = NULL,
-    .directErrorCallback = NULL
-};
-
-SPI_Buffer_t buffer = {
-    .txData = d1,
-    .rxData = d2,
-    .length = 12
-};
-
-HSPI_DMA_t hspi1_dma = {
-    .spiConfig = &spi1,
-    .txChannel = &dmaInstanceTx,
-    .rxChannel = &dmaInstanceRx
 };
 
 int main(){
@@ -105,7 +30,16 @@ int main(){
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-    ret = WDT_Init(WDT_PRESCALER_32, 2500);
+    ret = CRC_Init();
+
+    uint8_t data[16] = {0x00, 0x01, 0x02, 0x03,
+                        0x04, 0x05, 0x06, 0x07,
+                        0x08, 0x09, 0x0A, 0x0B,
+                        0x0C, 0x0D, 0x0E, 0x0F};
+
+    uint32_t* Data_Buffer = (uint32_t*)data;
+    uint32_t crcResult;
+    ret = CRC_Calculate(Data_Buffer, 4, &crcResult);    // 0x081B46CA
 
     while(1){
         LED_Toggle(LED_1);
