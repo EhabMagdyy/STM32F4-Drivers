@@ -6,9 +6,18 @@
 #include "interface/MCAL/dma.h"
 
 typedef struct{
-    uint8_t* src;
-    uint8_t* dest;
-    uint32_t length;
+    union{
+        struct{
+            uint8_t* data;
+            uint8_t length;
+            uint8_t index;
+        } buffer;
+        struct{
+            uint8_t* src;
+            uint8_t* dest;
+            uint32_t length;
+        } dmaBuffer;
+    };
 } HSerial_Buffer_t;
 
 typedef struct {
@@ -18,7 +27,6 @@ typedef struct {
     HSerial_Buffer_t* txBuffer;
     HSerial_Buffer_t* rxBuffer;
 } HSerial_Config_t;
-
 
 STD_ReturnType HSerial_Init(HSerial_Config_t* hserialConfig, SYSTICK_ClockSource_t clockSource);
 STD_ReturnType HSerial_DeInit(HSerial_Config_t* hserialConfig);

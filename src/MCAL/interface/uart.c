@@ -3,16 +3,9 @@
 #include "interface/Core/nvic.h"
 #include "interface/MCAL/gpio.h"
 
-volatile uint8_t txBuffer[3][100] = {0};
-volatile uint8_t* requestedTxBuffer[3] = {NULL};
-volatile uint32_t requestedTxLength[3] = {0};
-volatile uint8_t  requestedTxIndex[3] = {0};
-volatile uint8_t* requestedRxBuffer[3] = {NULL};
-volatile uint32_t requestedRxLength[3] = {0};
-volatile uint8_t  requestedRxIndex[3] = {0};
-
-CBFunc_t txCallback[3] ={NULL};
-CBFunc_t rxCallback[3] ={NULL};
+void USART1_ITHandler(void);
+void USART2_ITHandler(void);
+void USART6_ITHandler(void);
 
 static inline int8_t uart_index(const UART_Instance_t* uart)
 {
@@ -111,18 +104,14 @@ STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clo
             uartObj->UartInstance->CR1 |=(1 << 9);
         }
 
-        // 5. Interrupt Configuration
-        txCallback[uartNum] = uartObj->txCallback;
-        rxCallback[uartNum] = uartObj->rxCallback;
-
-        // 6. Configure Stop Bits
+        // 5. Configure Stop Bits
         uartObj->UartInstance->CR2 &= ~(0b11 << 12); // 1 Stop Bit
 
-        // 7. Enable Transmitter and Receiver
+        // 6. Enable Transmitter and Receiver
         uartObj->UartInstance->CR1 |=(1 << 3);  // Transmitter Enable
         uartObj->UartInstance->CR1 |=(1 << 2);  // Receiver Enable
 
-        // 8. DMA Configuration
+        // 7. DMA Configuration
         if(uartObj->dmaEnable == UART_DMA_ENABLE){
             uartObj->UartInstance->CR3 |=(1 << 7);
             uartObj->UartInstance->CR3 |=(1 << 6);
@@ -132,10 +121,10 @@ STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clo
             uartObj->UartInstance->CR3 &= ~(1 << 6);
         }
 
-        // 9. Enable UART
+        // 8. Enable UART
         uartObj->UartInstance->CR1 |=(1 << 13); // USART Enable
 
-        // 10. Configure UART Pins
+        // 9. Configure UART Pins
         GPIO_t uart_tx_pin = {
             .port       = uartObj->port,
             .pin        = uartObj->txPin,
@@ -162,7 +151,7 @@ STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clo
             ret = STD_ERROR;
         }
 
-        // 11. Enable NVIC
+        // 10. Enable NVIC
         if(uartNum == 0){
             ret = NVIC_EnableIRQ(USART1_IRQn);
         }
@@ -313,109 +302,110 @@ STD_ReturnType UART_ReceiveBuffer(const UART_Config_t* uartObj, Buffer_t* buffer
     return ret;
 }
 
+// This logic is replaced in HSerial HAL layer module
 
-STD_ReturnType UART_SendCharIT(const UART_Config_t* uartObj, uint8_t data){
-    STD_ReturnType ret = STD_SUCCESS;
-    if(uartObj == NULL){    
-        return STD_ERROR;
-    }
+// STD_ReturnType UART_SendCharIT(const UART_Config_t* uartObj, uint8_t data){
+//     STD_ReturnType ret = STD_SUCCESS;
+//     if(uartObj == NULL){    
+//         return STD_ERROR;
+//     }
 
-    int8_t uartNum = uart_index(uartObj->UartInstance);
-    if(uartNum < 0){
-        return STD_ERROR;
-    }
-    if(requestedTxBuffer[uartNum] != NULL){
-        return STD_BUSY;
-    }
+//     int8_t uartNum = uart_index(uartObj->UartInstance);
+//     if(uartNum < 0){
+//         return STD_ERROR;
+//     }
+//     if(requestedTxBuffer[uartNum] != NULL){
+//         return STD_BUSY;
+//     }
 
-    txBuffer[uartNum][0] = data;
-    requestedTxBuffer[uartNum] = &txBuffer[uartNum][0];
-    requestedTxLength[uartNum] = 1;
+//     txBuffer[uartNum][0] = data;
+//     requestedTxBuffer[uartNum] = &txBuffer[uartNum][0];
+//     requestedTxLength[uartNum] = 1;
 
-    uartObj->UartInstance->CR1 |=(1 << 7);
+//     uartObj->UartInstance->CR1 |=(1 << 7);
 
-    return ret;
-}
+//     return ret;
+// }
 
-STD_ReturnType UART_SendBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer){
-    if(uartObj == NULL || buffer == NULL || buffer->length == 0){
-        return STD_ERROR;
-    }
-    int8_t uartNum = uart_index(uartObj->UartInstance);
-    if(uartNum < 0){
-        return STD_ERROR;
-    }
+// STD_ReturnType UART_SendBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer){
+//     if(uartObj == NULL || buffer == NULL || buffer->length == 0){
+//         return STD_ERROR;
+//     }
+//     int8_t uartNum = uart_index(uartObj->UartInstance);
+//     if(uartNum < 0){
+//         return STD_ERROR;
+//     }
 
-    if(requestedTxBuffer[uartNum] != NULL){
-        return STD_BUSY;
-    }
+//     if(requestedTxBuffer[uartNum] != NULL){
+//         return STD_BUSY;
+//     }
 
-    if(buffer->length > sizeof(txBuffer[uartNum])){
-        return STD_ERROR;
-    }
+//     if(buffer->length > sizeof(txBuffer[uartNum])){
+//         return STD_ERROR;
+//     }
 
-    for(uint8_t i = 0; i < buffer->length; i++){
-        txBuffer[uartNum][i] = buffer->data[i];
-    }
-    requestedTxBuffer[uartNum] = &txBuffer[uartNum][0];
-    requestedTxLength[uartNum] = buffer->length;
-    buffer->index = requestedTxIndex[uartNum] = 0;
+//     for(uint8_t i = 0; i < buffer->length; i++){
+//         txBuffer[uartNum][i] = buffer->data[i];
+//     }
+//     requestedTxBuffer[uartNum] = &txBuffer[uartNum][0];
+//     requestedTxLength[uartNum] = buffer->length;
+//     buffer->index = requestedTxIndex[uartNum] = 0;
 
-    // enable TXE
-    uartObj->UartInstance->CR1 |=(1 << 7);
+//     // enable TXE
+//     uartObj->UartInstance->CR1 |=(1 << 7);
 
-    return STD_SUCCESS;
-}
+//     return STD_SUCCESS;
+// }
 
-STD_ReturnType UART_ReceiveCharIT(const UART_Config_t* uartObj, uint8_t* data){
-    STD_ReturnType ret = STD_SUCCESS;
+// STD_ReturnType UART_ReceiveCharIT(const UART_Config_t* uartObj, uint8_t* data){
+//     STD_ReturnType ret = STD_SUCCESS;
 
-    if(uartObj == NULL || data == NULL){
-        ret = STD_ERROR;
-    }
-    else{
-        int8_t uartNum = uart_index(uartObj->UartInstance);
-        if(uartNum < 0){ 
-            ret = STD_ERROR;
-        }
-        else{
-            requestedRxBuffer[uartNum] = data;
-            requestedRxLength[uartNum] = 1;
-            // Enable RXNE interrupt
-            uartObj->UartInstance->CR1 |=(1 << 5);
-        }
-    }
+//     if(uartObj == NULL || data == NULL){
+//         ret = STD_ERROR;
+//     }
+//     else{
+//         int8_t uartNum = uart_index(uartObj->UartInstance);
+//         if(uartNum < 0){ 
+//             ret = STD_ERROR;
+//         }
+//         else{
+//             requestedRxBuffer[uartNum] = data;
+//             requestedRxLength[uartNum] = 1;
+//             // Enable RXNE interrupt
+//             uartObj->UartInstance->CR1 |=(1 << 5);
+//         }
+//     }
 
-    return ret;
-}
+//     return ret;
+// }
 
-STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer){
-    STD_ReturnType ret = STD_SUCCESS;
+// STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer){
+//     STD_ReturnType ret = STD_SUCCESS;
 
-    if(uartObj == NULL || buffer == NULL || buffer->length == 0){
-        ret = STD_ERROR;
-    }
-    else{
-        int8_t uartNum = uart_index(uartObj->UartInstance);
-        if(uartNum < 0){
-            ret = STD_ERROR;
-        }
-        else{
-            if(requestedRxBuffer[uartNum] != NULL){
-                return STD_BUSY;
-            }
-            else{
-                requestedRxBuffer[uartNum] = buffer->data;
-                requestedRxLength[uartNum] = buffer->length;
-                buffer->index = requestedRxIndex[uartNum] = 0;
+//     if(uartObj == NULL || buffer == NULL || buffer->length == 0){
+//         ret = STD_ERROR;
+//     }
+//     else{
+//         int8_t uartNum = uart_index(uartObj->UartInstance);
+//         if(uartNum < 0){
+//             ret = STD_ERROR;
+//         }
+//         else{
+//             if(requestedRxBuffer[uartNum] != NULL){
+//                 return STD_BUSY;
+//             }
+//             else{
+//                 requestedRxBuffer[uartNum] = buffer->data;
+//                 requestedRxLength[uartNum] = buffer->length;
+//                 buffer->index = requestedRxIndex[uartNum] = 0;
                 
-                uartObj->UartInstance->CR1 |=(1 << 5); // enable RXNEIE
-            }
-        }
-    }
+//                 uartObj->UartInstance->CR1 |=(1 << 5); // enable RXNEIE
+//             }
+//         }
+//     }
     
-    return ret;
-}
+//     return ret;
+// }
 
 // Getters & Setters
 void UART_SetTXIE(UART_Instance_t uartInstance, uint8_t status){
@@ -460,48 +450,14 @@ uint8_t UART_GetDR(UART_Instance_t uartInstance){
     return (uint8_t)(uartInstance->DR & 0xFF);
 }
 
-void USART_Handler(uint8_t uartNum, UART_Instance_t uartInstance){
-    // TXE handling
-    if(UART_GetTXEFlag(uartInstance) && UART_GetTXIE(uartInstance)){
-        if(requestedTxLength[uartNum] > 0 && requestedTxBuffer[uartNum] != NULL){
-            UART_SetDR(uartInstance, *(requestedTxBuffer[uartNum]++));
-            requestedTxLength[uartNum]--;
-            requestedTxIndex[uartNum]++;
-        }
-        if(requestedTxLength[uartNum] == 0){
-            UART_SetTXIE(uartInstance, UART_INTERRUPT_DISABLE);
-            requestedTxBuffer[uartNum] = NULL;
-            if(txCallback[uartNum] != NULL){
-                txCallback[uartNum]();
-            }
-        }
-    }
-    // RXNE handling
-    if(UART_GetRXNEFlag(uartInstance) && UART_GetRXIE(uartInstance)){
-        uint8_t data = UART_GetDR(uartInstance);
-        if(requestedRxLength[uartNum] > 0){
-            *(requestedRxBuffer[uartNum]++) = data;
-            requestedRxLength[uartNum]--;
-            requestedRxIndex[uartNum]++;
-        }
-        if(requestedRxLength[uartNum] == 0){
-            UART_SetRXIE(uartInstance, UART_INTERRUPT_DISABLE);
-            requestedRxBuffer[uartNum] = NULL;
-            if(rxCallback[uartNum] != NULL){
-                rxCallback[uartNum]();
-            }
-        }
-    }
-}
-
 void USART1_IRQHandler(void){
-    USART_Handler(0, UART1);
+    USART1_ITHandler();
 }
 
 void USART2_IRQHandler(void){
-    USART_Handler(1, UART2);
+    USART2_ITHandler();
 }
 
 void USART6_IRQHandler(void){
-    USART_Handler(2, UART6);
+    USART6_ITHandler();
 }
