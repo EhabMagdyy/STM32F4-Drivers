@@ -28,44 +28,6 @@ void myRxCallback(void){
     LED_Toggle(LED_1);
 }
 
-DMA_Instance_t dmaInstanceTx = {
-    .dmaNum = DMA_2,
-    .stream = DMA_STREAM_7,
-    .channel = DMA_CHANNEL_4,
-    .direction = DMA_MEMORY_TO_PERIPHERAL,
-    .memInc = DMA_MEM_INC_ENABLE,
-    .periphInc = DMA_PERIPH_INC_DISABLE,
-    .priority = DMA_PRIORITY_LOW,
-    .memBurst = DMA_MEM_BURST_SINGLE,
-    .periphBurst = DMA_PERIPH_BURST_SINGLE,
-    .memSize = DMA_MEM_SIZE_8BIT,
-    .periphSize = DMA_PERIPH_SIZE_8BIT,
-    .interruptConf = DMA_IT_COMPLETE,
-    .combleteCallback = myTxCallback,
-    .halfCallback = NULL,
-    .errorCallback = NULL,
-    .directErrorCallback = NULL
-};
-
-DMA_Instance_t dmaInstanceRx = {
-    .dmaNum = DMA_2,
-    .stream = DMA_STREAM_5,
-    .channel = DMA_CHANNEL_4,
-    .direction = DMA_PERIPHERAL_TO_MEMORY,
-    .memInc = DMA_MEM_INC_ENABLE,
-    .periphInc = DMA_PERIPH_INC_DISABLE,
-    .priority = DMA_PRIORITY_LOW,
-    .memBurst = DMA_MEM_BURST_SINGLE,
-    .periphBurst = DMA_PERIPH_BURST_SINGLE,
-    .memSize = DMA_MEM_SIZE_8BIT,
-    .periphSize = DMA_PERIPH_SIZE_8BIT,
-    .interruptConf = DMA_IT_COMPLETE,
-    .combleteCallback = myRxCallback,
-    .halfCallback = NULL,
-    .errorCallback = NULL,
-    .directErrorCallback = NULL
-};
-
 UART_Config_t uart1_config = {
     .UartInstance = UART1,
     .BaudRate = UART_BAUDRATE_115200,
@@ -73,27 +35,27 @@ UART_Config_t uart1_config = {
     .Parity = UART_PARITY_NONE,
     .port = GPIO_PORTA,
     .txPin = GPIO_PIN_9,
-    .txCallback = NULL,
-    .rxCallback = NULL,
-    .dmaEnable = UART_DMA_ENABLE
+    .txCallback = myTxCallback,
+    .rxCallback = myRxCallback,
+    .dmaEnable = UART_DMA_DISABLE
 };
 
 HSerial_Buffer_t hserial_txBuffer = {
-    .src = d1,
-    .dest = d2,
-    .length = 12
+    .buffer.data = d1,
+    .buffer.index = 0,
+    .buffer.length = 12
 };
 
 HSerial_Buffer_t hserial_rxBuffer = {
-    .src = d1,
-    .dest = d2,
-    .length = 12
+    .buffer.data = d2,
+    .buffer.index = 0,
+    .buffer.length = 12
 };
 
 HSerial_Config_t hserialConfig = {
     .uartConfig = &uart1_config,
-    .txDma = &dmaInstanceTx,
-    .rxDma = &dmaInstanceRx,
+    .txDma = NULL,
+    .rxDma = NULL,
     .txBuffer = &hserial_txBuffer,
     .rxBuffer = &hserial_rxBuffer
 };
@@ -111,11 +73,11 @@ int main(){
     ret = HSerial_Init(&hserialConfig, SYSTICK_CLOCK_SOURCE_PLL_MAX);
 
     while(1){
-        ret = HSerial_ReceiveBufferDMA(&hserialConfig);
+        ret = HSerial_ReceiveBufferIT(&hserialConfig);
         if(ret != STD_SUCCESS){
             continue;
         }
-        ret = HSerial_SendBufferDMA(&hserialConfig);
+        ret = HSerial_SendBufferIT(&hserialConfig);
         if(ret != STD_SUCCESS){
             continue;
         }

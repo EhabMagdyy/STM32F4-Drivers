@@ -79,15 +79,15 @@ UART_Config_t uart1_config = {
 };
 
 HSerial_Buffer_t hserial_txBuffer = {
-    .src = d1,
-    .dest = d2,
-    .length = 12
+    .dmaBuffer.src = d1,
+    .dmaBuffer.dest = d2,
+    .dmaBuffer.length = 12
 };
 
 HSerial_Buffer_t hserial_rxBuffer = {
-    .src = d1,
-    .dest = d2,
-    .length = 12
+    .dmaBuffer.src = d1,
+    .dmaBuffer.dest = d2,
+    .dmaBuffer.length = 12
 };
 
 HSerial_Config_t hserialConfig = {
