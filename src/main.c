@@ -10,15 +10,92 @@
 #include "interface/MCAL/uart.h"
 #include "interface/MCAL/dma.h"
 #include "interface/HAL/hserial.h"
-#include "interface/MCAL/spi.h"
-#include "interface/HAL/hspi.h"
-#include "interface/MCAL/wdt.h"
-#include "interface/MCAL/crc.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
     .pllClkSource = RCC_CLOCK_SOURCE_HSE,
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
+};
+
+uint8_t d1[12] = "Ehab1234567"; 
+uint8_t d2[12] = {0}; 
+
+void myTxCallback(void){
+    LED_Toggle(LED_0);
+}
+
+void myRxCallback(void){
+    LED_Toggle(LED_1);
+}
+
+DMA_Instance_t dmaInstanceTx = {
+    .dmaNum = DMA_2,
+    .stream = DMA_STREAM_7,
+    .channel = DMA_CHANNEL_4,
+    .direction = DMA_MEMORY_TO_PERIPHERAL,
+    .memInc = DMA_MEM_INC_ENABLE,
+    .periphInc = DMA_PERIPH_INC_DISABLE,
+    .priority = DMA_PRIORITY_LOW,
+    .memBurst = DMA_MEM_BURST_SINGLE,
+    .periphBurst = DMA_PERIPH_BURST_SINGLE,
+    .memSize = DMA_MEM_SIZE_8BIT,
+    .periphSize = DMA_PERIPH_SIZE_8BIT,
+    .interruptConf = DMA_IT_COMPLETE,
+    .combleteCallback = myTxCallback,
+    .halfCallback = NULL,
+    .errorCallback = NULL,
+    .directErrorCallback = NULL
+};
+
+DMA_Instance_t dmaInstanceRx = {
+    .dmaNum = DMA_2,
+    .stream = DMA_STREAM_5,
+    .channel = DMA_CHANNEL_4,
+    .direction = DMA_PERIPHERAL_TO_MEMORY,
+    .memInc = DMA_MEM_INC_ENABLE,
+    .periphInc = DMA_PERIPH_INC_DISABLE,
+    .priority = DMA_PRIORITY_LOW,
+    .memBurst = DMA_MEM_BURST_SINGLE,
+    .periphBurst = DMA_PERIPH_BURST_SINGLE,
+    .memSize = DMA_MEM_SIZE_8BIT,
+    .periphSize = DMA_PERIPH_SIZE_8BIT,
+    .interruptConf = DMA_IT_COMPLETE,
+    .combleteCallback = myRxCallback,
+    .halfCallback = NULL,
+    .errorCallback = NULL,
+    .directErrorCallback = NULL
+};
+
+UART_Config_t uart1_config = {
+    .UartInstance = UART1,
+    .BaudRate = UART_BAUDRATE_115200,
+    .DataBits = UART_DATABITS_8,
+    .Parity = UART_PARITY_NONE,
+    .port = GPIO_PORTA,
+    .txPin = GPIO_PIN_9,
+    .txCallback = NULL,
+    .rxCallback = NULL,
+    .dmaEnable = UART_DMA_ENABLE
+};
+
+HSerial_Buffer_t hserial_txBuffer = {
+    .src = d1,
+    .dest = d2,
+    .length = 12
+};
+
+HSerial_Buffer_t hserial_rxBuffer = {
+    .src = d1,
+    .dest = d2,
+    .length = 12
+};
+
+HSerial_Config_t hserialConfig = {
+    .uartConfig = &uart1_config,
+    .txDma = &dmaInstanceTx,
+    .rxDma = &dmaInstanceRx,
+    .txBuffer = &hserial_txBuffer,
+    .rxBuffer = &hserial_rxBuffer
 };
 
 int main(){
@@ -30,20 +107,19 @@ int main(){
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-    ret = CRC_Init();
 
-    uint8_t data[16] = {0x00, 0x01, 0x02, 0x03,
-                        0x04, 0x05, 0x06, 0x07,
-                        0x08, 0x09, 0x0A, 0x0B,
-                        0x0C, 0x0D, 0x0E, 0x0F};
-
-    uint32_t* Data_Buffer = (uint32_t*)data;
-    uint32_t crcResult;
-    ret = CRC_Calculate(Data_Buffer, 4, &crcResult);    // 0x081B46CA
+    ret = HSerial_Init(&hserialConfig, SYSTICK_CLOCK_SOURCE_PLL_MAX);
 
     while(1){
-        LED_Toggle(LED_1);
-        SYSTICK_DelayMS(500);
+        ret = HSerial_ReceiveBufferDMA(&hserialConfig);
+        if(ret != STD_SUCCESS){
+            continue;
+        }
+        ret = HSerial_SendBufferDMA(&hserialConfig);
+        if(ret != STD_SUCCESS){
+            continue;
+        }
+        SYSTICK_DelayMS(1000);
     }
     
     return 0;

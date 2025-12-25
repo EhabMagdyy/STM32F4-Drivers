@@ -122,10 +122,20 @@ STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clo
         uartObj->UartInstance->CR1 |=(1 << 3);  // Transmitter Enable
         uartObj->UartInstance->CR1 |=(1 << 2);  // Receiver Enable
 
-        // 8. Enable UART
+        // 8. DMA Configuration
+        if(uartObj->dmaEnable == UART_DMA_ENABLE){
+            uartObj->UartInstance->CR3 |=(1 << 7);
+            uartObj->UartInstance->CR3 |=(1 << 6);
+        }
+        else{
+            uartObj->UartInstance->CR3 &= ~(1 << 7);
+            uartObj->UartInstance->CR3 &= ~(1 << 6);
+        }
+
+        // 9. Enable UART
         uartObj->UartInstance->CR1 |=(1 << 13); // USART Enable
 
-        // 9. Configure UART Pins
+        // 10. Configure UART Pins
         GPIO_t uart_tx_pin = {
             .port       = uartObj->port,
             .pin        = uartObj->txPin,
@@ -407,150 +417,91 @@ STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, Buffer_t* buff
     return ret;
 }
 
-STD_ReturnType UART_SetDMATx(const UART_Config_t* uartObj, uint8_t state){
-    STD_ReturnType ret = STD_SUCCESS;
-    if(uartObj == NULL){
-        ret = STD_ERROR;
+// Getters & Setters
+void UART_SetTXIE(UART_Instance_t uartInstance, uint8_t status){
+    if(status == UART_INTERRUPT_ENABLE){
+        uartInstance->CR1 |=(1 << 7);
     }
     else{
-        if(state == UART_DMA_ENABLE){
-            uartObj->UartInstance->CR3 |=(1 << 7); // TX DMA Enable
-        }
-        else if(state == UART_DMA_DISABLE){
-            uartObj->UartInstance->CR3 &= ~(1 << 7); // TX DMA Disable
-        }
-        else{
-            ret = STD_ERROR;
-        }
+        uartInstance->CR1 &= ~(1 << 7);
     }
-    return ret;
 }
 
-STD_ReturnType UART_SetDMARx(const UART_Config_t* uartObj, uint8_t state){
-    STD_ReturnType ret = STD_SUCCESS;
-    if(uartObj == NULL){
-        ret = STD_ERROR;
+void UART_SetRXIE(UART_Instance_t uartInstance, uint8_t status){
+    if(status == UART_INTERRUPT_ENABLE){
+        uartInstance->CR1 |=(1 << 5);
     }
     else{
-        if(state == UART_DMA_ENABLE){
-            uartObj->UartInstance->CR3 |=(1 << 6); // RX DMA Enable
+        uartInstance->CR1 &= ~(1 << 5);
+    }
+}
+
+uint8_t UART_GetTXIE(UART_Instance_t uartInstance){
+    return (uartInstance->CR1 >> 7) & 0x01;
+}
+
+uint8_t UART_GetRXIE(UART_Instance_t uartInstance){
+    return (uartInstance->CR1 >> 5) & 0x01;
+}
+
+uint8_t UART_GetTXEFlag(UART_Instance_t uartInstance){
+    return (uartInstance->SR >> 7) & 0x01;
+}
+
+uint8_t UART_GetRXNEFlag(UART_Instance_t uartInstance){
+    return (uartInstance->SR >> 5) & 0x01;
+}
+
+void UART_SetDR(UART_Instance_t uartInstance, uint8_t data){
+    uartInstance->DR = data;
+}
+
+uint8_t UART_GetDR(UART_Instance_t uartInstance){
+    return (uint8_t)(uartInstance->DR & 0xFF);
+}
+
+void USART_Handler(uint8_t uartNum, UART_Instance_t uartInstance){
+    // TXE handling
+    if(UART_GetTXEFlag(uartInstance) && UART_GetTXIE(uartInstance)){
+        if(requestedTxLength[uartNum] > 0 && requestedTxBuffer[uartNum] != NULL){
+            UART_SetDR(uartInstance, *(requestedTxBuffer[uartNum]++));
+            requestedTxLength[uartNum]--;
+            requestedTxIndex[uartNum]++;
         }
-        else if(state == UART_DMA_DISABLE){
-            uartObj->UartInstance->CR3 &= ~(1 << 6); // RX DMA Disable
-        }
-        else{
-            ret = STD_ERROR;
+        if(requestedTxLength[uartNum] == 0){
+            UART_SetTXIE(uartInstance, UART_INTERRUPT_DISABLE);
+            requestedTxBuffer[uartNum] = NULL;
+            if(txCallback[uartNum] != NULL){
+                txCallback[uartNum]();
+            }
         }
     }
-    return ret;
+    // RXNE handling
+    if(UART_GetRXNEFlag(uartInstance) && UART_GetRXIE(uartInstance)){
+        uint8_t data = UART_GetDR(uartInstance);
+        if(requestedRxLength[uartNum] > 0){
+            *(requestedRxBuffer[uartNum]++) = data;
+            requestedRxLength[uartNum]--;
+            requestedRxIndex[uartNum]++;
+        }
+        if(requestedRxLength[uartNum] == 0){
+            UART_SetRXIE(uartInstance, UART_INTERRUPT_DISABLE);
+            requestedRxBuffer[uartNum] = NULL;
+            if(rxCallback[uartNum] != NULL){
+                rxCallback[uartNum]();
+            }
+        }
+    }
 }
 
 void USART1_IRQHandler(void){
-    // TXE handling
-    if(UART1->SR &(1 << 7) && (UART1->CR1 &(1 << 7))){
-        int8_t uartNum = 0;
-        if(requestedTxLength[uartNum] > 0 && requestedTxBuffer[uartNum] != NULL){
-            UART1->DR = *(requestedTxBuffer[uartNum]++);
-            requestedTxLength[uartNum]--;
-            requestedTxIndex[uartNum]++;
-        }
-        if(requestedTxLength[uartNum] == 0){
-            UART1->CR1 &= ~(1 << 7);  // disable TXE
-            requestedTxBuffer[uartNum] = NULL;
-            if(txCallback[uartNum] != NULL){
-                txCallback[uartNum]();
-            }
-        }
-    }
-    // RXNE handling
-    if(UART1->SR &(1 << 5) && (UART1->CR1 &(1 << 5))){
-        int8_t uartNum = 0;
-        static uint8_t counter = 0;
-        uint8_t data =(uint8_t)(UART1->DR & 0xFF);
-        requestedRxBuffer[uartNum][counter++] = data;
-        if(requestedRxLength[uartNum] > 0){
-            *(requestedRxBuffer[uartNum]++) = data;      //////////
-            requestedRxLength[uartNum]--;
-            requestedRxIndex[uartNum]++;
-        }
-        if(requestedRxLength[uartNum] == 0){
-            counter = 0;
-            UART1->CR1 &= ~(1 << 5);
-            requestedRxBuffer[uartNum] = NULL;
-            if(rxCallback[uartNum] != NULL){
-                rxCallback[uartNum]();
-            }
-        }
-    }
+    USART_Handler(0, UART1);
 }
 
 void USART2_IRQHandler(void){
-    // TXE handling
-    if(UART2->SR &(1 << 7) && (UART2->CR1 &(1 << 7))){
-        int8_t uartNum = 1;
-        if(requestedTxLength[uartNum] > 0 && requestedTxBuffer[uartNum] != NULL){
-            UART2->DR = *(requestedTxBuffer[uartNum]++);
-            requestedTxLength[uartNum]--;
-            requestedTxIndex[uartNum]++;
-        }
-        if(requestedTxLength[uartNum] == 0){
-            UART2->CR1 &= ~(1 << 7);  // disable TXE
-            requestedTxBuffer[uartNum] = NULL;
-            if(txCallback[uartNum] != NULL){
-                txCallback[uartNum]();
-            }
-        }
-    }
-    // RXNE handling
-    if(UART2->SR &(1 << 5) && (UART2->CR1 &(1 << 5))){
-        int8_t uartNum = 1;
-        uint8_t data =(uint8_t)(UART2->DR & 0xFF);
-        if(requestedRxLength[uartNum] > 0){
-            *(requestedRxBuffer[uartNum]++) = data;
-            requestedRxLength[uartNum]--;
-            requestedRxIndex[uartNum]++;
-        }
-        if(requestedRxLength[uartNum] == 0){
-            UART2->CR1 &= ~(1 << 5);
-            requestedRxBuffer[uartNum] = NULL;
-            if(rxCallback[uartNum] != NULL){
-                rxCallback[uartNum]();
-            }
-        }
-    }
+    USART_Handler(1, UART2);
 }
 
 void USART6_IRQHandler(void){
-    // TXE handling
-    if(UART6->SR &(1 << 7) && (UART6->CR1 &(1 << 7))){
-        int8_t uartNum = 2;
-        if(requestedTxLength[uartNum] > 0 && requestedTxBuffer[uartNum] != NULL){
-            UART6->DR = *(requestedTxBuffer[uartNum]++);
-            requestedTxLength[uartNum]--;
-            requestedTxIndex[uartNum]++;
-        }
-        if(requestedTxLength[uartNum] == 0){
-            UART6->CR1 &= ~(1 << 7);  // disable TXE
-            requestedTxBuffer[uartNum] = NULL;
-            if(txCallback[uartNum] != NULL){
-                txCallback[uartNum]();
-            }
-        }
-    }
-    // RXNE handling
-    if(UART6->SR &(1 << 5) && (UART6->CR1 &(1 << 5))){
-        int8_t uartNum = 2;
-        uint8_t data =(uint8_t)(UART6->DR & 0xFF);
-        if(requestedRxLength[uartNum] > 0){
-            *(requestedRxBuffer[uartNum]++) = data;
-            requestedRxLength[uartNum]--;
-        }
-        if(requestedRxLength[uartNum] == 0){
-            UART6->CR1 &= ~(1 << 5);
-            requestedRxBuffer[uartNum] = NULL;
-            if(rxCallback[uartNum] != NULL){
-                rxCallback[uartNum]();
-            }
-        }
-    }
+    USART_Handler(2, UART6);
 }

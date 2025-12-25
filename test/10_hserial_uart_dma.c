@@ -74,7 +74,8 @@ UART_Config_t uart1_config = {
     .port = GPIO_PORTA,
     .txPin = GPIO_PIN_9,
     .txCallback = NULL,
-    .rxCallback = NULL
+    .rxCallback = NULL,
+    .dmaEnable = UART_DMA_ENABLE
 };
 
 HSerial_Buffer_t hserial_txBuffer = {
@@ -110,11 +111,11 @@ int main(){
     ret = HSerial_Init(&hserialConfig, SYSTICK_CLOCK_SOURCE_PLL_MAX);
 
     while(1){
-        ret = HSerial_ReceiveBuffer(&hserialConfig);
+        ret = HSerial_ReceiveBufferDMA(&hserialConfig);
         if(ret != STD_SUCCESS){
             continue;
         }
-        ret = HSerial_SendBuffer(&hserialConfig);
+        ret = HSerial_SendBufferDMA(&hserialConfig);
         if(ret != STD_SUCCESS){
             continue;
         }

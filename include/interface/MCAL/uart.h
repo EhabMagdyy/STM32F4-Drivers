@@ -49,6 +49,7 @@ typedef struct{
     uint8_t txPin;
     CBFunc_t txCallback;
     CBFunc_t rxCallback;
+    uint8_t dmaEnable;
 } UART_Config_t;
 
 STD_ReturnType UART_Init(const UART_Config_t* uartObj, SYSTICK_ClockSource_t clockSource);
@@ -63,7 +64,17 @@ STD_ReturnType UART_SendBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer)
 STD_ReturnType UART_ReceiveCharIT(const UART_Config_t* uartObj, uint8_t* data);
 STD_ReturnType UART_ReceiveBufferIT(const UART_Config_t* uartObj, Buffer_t* buffer);
 
-STD_ReturnType UART_SetDMATx(const UART_Config_t* uartObj, uint8_t state);
-STD_ReturnType UART_SetDMARx(const UART_Config_t* uartObj, uint8_t state);
+// Getters & Setters
+void UART_SetTXIE(UART_Instance_t uartInstance, uint8_t status);
+void UART_SetRXIE(UART_Instance_t uartInstance, uint8_t status);
+
+uint8_t UART_GetTXIE(UART_Instance_t uartInstance);
+uint8_t UART_GetRXIE(UART_Instance_t uartInstance);
+
+uint8_t UART_GetTXEFlag(UART_Instance_t uartInstance);
+uint8_t UART_GetRXNEFlag(UART_Instance_t uartInstance);
+
+void UART_SetDR(UART_Instance_t uartInstance, uint8_t data);
+uint8_t UART_GetDR(UART_Instance_t uartInstance);
 
 #endif // UART_H
