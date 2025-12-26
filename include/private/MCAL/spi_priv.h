@@ -14,8 +14,8 @@ typedef struct{
 } SPI_Reg_t;
 
 #define SPI1   ((SPI_Reg_t*)0x40013000UL)
-#define SPI2   ((SPI_Reg_t*)0x40013800UL)
-#define SPI3   ((SPI_Reg_t*)0x40013C00UL)
+#define SPI2   ((SPI_Reg_t*)0x40003800UL)
+#define SPI3   ((SPI_Reg_t*)0x40003C00UL)
 #define SPI4   ((SPI_Reg_t*)0x40013400UL)
 
 typedef SPI_Reg_t* SPI_Instance_t;

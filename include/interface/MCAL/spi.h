@@ -3,6 +3,9 @@
 
 #include "../../../lib/STD_Types.h"
 
+#define SPI_SS_PIN_SET      1U
+#define SPI_SS_PIN_RESET    0U
+
 typedef enum{
     SPI_1 = 0,
     SPI_2,
@@ -100,6 +103,7 @@ STD_ReturnType SPI_DeInit(const SPI_Config_t* config);
 STD_ReturnType SPI_Tranceive(const SPI_Config_t* config, SPI_Buffer_t* buffer, uint32_t timeout);
 // Transmit & Receive Using Interrupts
 STD_ReturnType SPI_TranceiveIT(const SPI_Config_t* config, SPI_Buffer_t* buffer);
+STD_ReturnType SPI_SetSSGPIOPin(SPI_Number_t spiNum, uint8_t pinState);
 // SPI Gettters & Setters
 STD_ReturnType SPI_GetTXEFlag(SPI_Number_t spiNum, uint8_t* status);
 STD_ReturnType SPI_GetRXNEFlag(SPI_Number_t spiNum, uint8_t* status);
