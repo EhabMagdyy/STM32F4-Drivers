@@ -241,6 +241,55 @@ STD_ReturnType SPI_TranceiveIT(const SPI_Config_t* config, SPI_Buffer_t* buffer)
     return ret;
 }
 
+STD_ReturnType SPI_SetSSGPIOPin(SPI_Number_t spiNum, uint8_t pinState){
+    STD_ReturnType ret = STD_SUCCESS;
+
+    switch(spiNum){
+        case SPI_1:
+            if(pinState == SPI_SS_PIN_RESET){
+                ret = GPIO_WritePin(&spi1_ss_pin, GPIO_PIN_RESET);
+            }
+            else if(pinState == SPI_SS_PIN_SET){
+                ret = GPIO_WritePin(&spi1_ss_pin, GPIO_PIN_SET);
+            }
+            else{
+                ret = STD_ERROR;
+            }
+            break;
+        case SPI_2:
+            if(pinState == SPI_SS_PIN_RESET){
+                ret = GPIO_WritePin(&spi2_ss_pin, GPIO_PIN_RESET);
+            }
+            else if(pinState == SPI_SS_PIN_SET){
+                ret = GPIO_WritePin(&spi2_ss_pin, GPIO_PIN_SET);
+            }
+            else{
+                ret = STD_ERROR;
+            }
+            break;
+        case SPI_3:
+            if(pinState == SPI_SS_PIN_RESET){
+                ret = GPIO_WritePin(&spi3_ss_pin, GPIO_PIN_RESET);
+            }
+            else if(pinState == SPI_SS_PIN_SET){
+                ret = GPIO_WritePin(&spi3_ss_pin, GPIO_PIN_SET);
+            }
+            else{
+                ret = STD_ERROR;
+            }
+            break;
+        case SPI_4:
+            // Not available on STM32F401 Discovery Board
+            ret = STD_ERROR;
+            break;
+        default:
+            ret = STD_ERROR;
+            break;
+    }
+
+    return ret;
+}
+
 STD_ReturnType SPI_GetTXEFlag(SPI_Number_t spiNum, uint8_t* status){
     STD_ReturnType ret = STD_SUCCESS;
 
