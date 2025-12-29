@@ -184,36 +184,40 @@ STD_ReturnType I2C_Master_Transmit(const I2C_Config_t* config, uint16_t devAddre
         (void)I2C[config->i2cNumber]->SR1;
         (void)I2C[config->i2cNumber]->SR2;
 
-
         // 7. Transmit Data Bytes
-        for(uint16_t i = 0; i < buffer->length; i++){
-            I2C[config->i2cNumber]->DR = buffer->data[i];
-
-            // Wait for TXE or BTF
+        for(uint16_t i = 0; i < buffer->length; i++)
+        {
+            // Wait for TXE (data register empty)
             tickStart = 0;
-            while(!(I2C[config->i2cNumber]->SR1 & I2C_SR1_TxE)){  // TXE
-                if(I2C[config->i2cNumber]->SR1 & I2C_SR1_AF){   // ACK Fail
-                    I2C[config->i2cNumber]->SR1 &= ~I2C_SR1_AF; // Clear AF
-                    I2C[config->i2cNumber]->CR1 |= I2C_CR1_STOP;   // STOP
+            while(!(I2C[config->i2cNumber]->SR1 & I2C_SR1_TxE)){
+                // ACK failure (NACK from slave)
+                if(I2C[config->i2cNumber]->SR1 & I2C_SR1_AF){
+                    I2C[config->i2cNumber]->SR1 &= ~I2C_SR1_AF;   // Clear AF
+                    I2C[config->i2cNumber]->CR1 |= I2C_CR1_STOP;  // STOP
                     return STD_ERROR;
                 }
-                if(tickStart++ > timeoutMS) return STD_TIMEOUT;
+                if(tickStart++ > timeoutMS){
+                    return STD_TIMEOUT;
+                }
                 SYSTICK_DelayMS(1);
             }
+            // Write next byte
+            I2C[config->i2cNumber]->DR = buffer->data[i];
+        }
 
-            // Wait for BTF flag (Byte Transfer Finished)
-            if(i + 1 < buffer->length){
-                tickStart = 0;
-                while(!(I2C[config->i2cNumber]->SR1 & I2C_SR1_BTF)){ // BTF
-                    if(I2C[config->i2cNumber]->SR1 & I2C_SR1_AF){  // ACK Fail
-                        I2C[config->i2cNumber]->SR1 &= ~I2C_SR1_AF; // Clear AF
-                        I2C[config->i2cNumber]->CR1 |= I2C_CR1_STOP;   // STOP
-                        return STD_ERROR;
-                    }
-                    if(tickStart++ > timeoutMS) return STD_TIMEOUT;
-                    SYSTICK_DelayMS(1);
-                }
+        // wait for BTF (Byte Transfer Finished)
+        tickStart = 0;
+        while(!(I2C[config->i2cNumber]->SR1 & I2C_SR1_BTF)){
+            if(I2C[config->i2cNumber]->SR1 & I2C_SR1_AF){
+                I2C[config->i2cNumber]->SR1 &= ~I2C_SR1_AF;  // Clear AF
+                I2C[config->i2cNumber]->CR1 |= I2C_CR1_STOP; // STOP
+                return STD_ERROR;
             }
+
+            if(tickStart++ > timeoutMS){
+                return STD_TIMEOUT;
+            }
+            SYSTICK_DelayMS(1);
         }
 
         // 8. Generate Stop Condition
@@ -224,82 +228,91 @@ STD_ReturnType I2C_Master_Transmit(const I2C_Config_t* config, uint16_t devAddre
 }
 
 STD_ReturnType I2C_Master_Receive(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer, uint32_t timeoutMS){
-    STD_ReturnType ret = STD_SUCCESS;
-
-    if(config == NULL || buffer == NULL || buffer->data == NULL || buffer->length == 0){
+    if(!config || !buffer || !buffer->data || buffer->length == 0){
         return STD_ERROR;
     }
     else{
-        uint32_t tickStart = 0;
-
-        // 1. Wait until BUSY flag is reset (SR2 BUSY bit)
+        uint32_t tickStart;
+    
+        // 1. Wait BUSY clear
         tickStart = 0;
-        while(I2C[config->i2cNumber]->SR2 & (1U << 1)){
+        while(I2C[config->i2cNumber]->SR2 & I2C_SR2_BUSY){
             if(tickStart++ > timeoutMS) return STD_TIMEOUT;
             SYSTICK_DelayMS(1);
         }
-
-        // 2. Generate Start Condition (START bit)
-        I2C[config->i2cNumber]->CR1 |= (1U << 8);
-
-        // 3. Wait for SB (Start Bit) flag
+    
+        // 2. START
+        I2C[config->i2cNumber]->CR1 |= I2C_CR1_START;
+    
+        // 3. Wait SB
         tickStart = 0;
-        while(!(I2C[config->i2cNumber]->SR1 & (1U << 0))){
+        while(!(I2C[config->i2cNumber]->SR1 & I2C_SR1_SB)){
             if(tickStart++ > timeoutMS) return STD_TIMEOUT;
             SYSTICK_DelayMS(1);
         }
-
-        // 4. Send Slave Address (7-bit mode)
-        if(config->addrMode == I2C_10BIT_ADDR_MODE){
-            // Don't Care :(
-        }
-        else{
-            I2C[config->i2cNumber]->DR = (devAddress << 1) | 1; // Read '1'
-        }
-
-        // 5. Wait for ADDR flag
+    
+        // 4. Send address (read)
+        I2C[config->i2cNumber]->DR = devAddress | 0x01;
+    
+        // 5. Wait ADDR
         tickStart = 0;
-        while(!(I2C[config->i2cNumber]->SR1 & (1U << 1))){
-            // Check for ACK Failure (AF) while waiting
-            if(I2C[config->i2cNumber]->SR1 & (1U << 10)){
-                I2C[config->i2cNumber]->SR1 &= ~(1U << 10); // Clear AF
-                I2C[config->i2cNumber]->CR1 |= (1U << 9);   // Generate STOP
-                return STD_ERROR;                           // NACK received
+        while(!(I2C[config->i2cNumber]->SR1 & I2C_SR1_ADDR)){
+            if(I2C[config->i2cNumber]->SR1 & I2C_SR1_AF){
+                I2C[config->i2cNumber]->SR1 &= ~I2C_SR1_AF;
+                I2C[config->i2cNumber]->CR1 |= I2C_CR1_STOP;
+                return STD_ERROR;
             }
-
             if(tickStart++ > timeoutMS) return STD_TIMEOUT;
             SYSTICK_DelayMS(1);
         }
-
-        // 6. Clear ADDR flag by reading SR1 and SR2
-        volatile uint32_t temp = I2C[config->i2cNumber]->SR1;
-        temp = I2C[config->i2cNumber]->SR2;
-
-        // 7. Receive Data Bytes
-        for(uint16_t i = 0; i < buffer->length; i++){
-            // If this is the last byte: NACK + STOP
-            if(i == (buffer->length - 1)){
-                // Disable ACK (send NACK)
-                I2C[config->i2cNumber]->CR1 &= ~(1U << 10);
-                // Send STOP
-                I2C[config->i2cNumber]->CR1 |= (1U << 9);
-            }
-
-            // Wait for RXNE
+    
+        // A) Only 1 byte
+        if(buffer->length == 1){
+            I2C[config->i2cNumber]->CR1 &= ~I2C_CR1_ACK;   // NACK
+            I2C[config->i2cNumber]->CR1 |= I2C_CR1_STOP;   // STOP
+            (void)I2C[config->i2cNumber]->SR1;
+            (void)I2C[config->i2cNumber]->SR2;
+    
+            // wait RXNE
             tickStart = 0;
-            while(!(I2C[config->i2cNumber]->SR1 & (1U << 6))){   // RXNE
+            while(!(I2C[config->i2cNumber]->SR1 & I2C_SR1_RxNE)){
                 if(tickStart++ > timeoutMS) return STD_TIMEOUT;
                 SYSTICK_DelayMS(1);
             }
-            // Read the received byte
-            buffer->data[i] = I2C[config->i2cNumber]->DR;
+    
+            buffer->data[0] = I2C[config->i2cNumber]->DR;
         }
-
-        // 8. Generate Stop Condition
-        I2C[config->i2cNumber]->CR1 |= (1U << 9);
+        // B) More Than 1 byte
+        else{
+            // clear ADDR
+            (void)I2C[config->i2cNumber]->SR1;
+            (void)I2C[config->i2cNumber]->SR2;
+    
+            for(uint16_t i = 0; i < buffer->length; i++){
+                if(i == buffer->length - 2){
+                    // prepare for last byte
+                    I2C[config->i2cNumber]->CR1 &= ~I2C_CR1_ACK; // NACK next
+                    I2C[config->i2cNumber]->CR1 |= I2C_CR1_STOP; // STOP
+                }
+    
+                // wait RXNE
+                tickStart = 0;
+                while(!(I2C[config->i2cNumber]->SR1 & I2C_SR1_RxNE)){
+                    if(I2C[config->i2cNumber]->SR1 & I2C_SR1_AF){
+                        I2C[config->i2cNumber]->SR1 &= ~I2C_SR1_AF;
+                        I2C[config->i2cNumber]->CR1 |= I2C_CR1_STOP;
+                        return STD_ERROR;
+                    }
+                    if(tickStart++ > timeoutMS) return STD_TIMEOUT;
+                    SYSTICK_DelayMS(1);
+                }
+    
+                buffer->data[i] = I2C[config->i2cNumber]->DR;
+            }
+        }
     }
 
-    return ret;
+    return STD_SUCCESS;
 }
 
 static STD_ReturnType I2C_GPIO_Init(I2C_Number_t i2cNumber){
@@ -377,7 +390,7 @@ static STD_ReturnType I2C_GPIO_Init(I2C_Number_t i2cNumber){
                 .port = GPIO_PORTA,
                 .pin = GPIO_PIN_8,
                 .mode = GPIO_MODE_AF,
-                .speed = GPIO_SPEED_HIGH,
+                .speed = GPIO_SPEED_VERY_HIGH,
                 .outputType = GPIO_OUTPUT_OPENDRAIN,
                 .pullType = GPIO_NOPULL,
                 .altFunc = GPIO_AF4_I2C1_2_3
@@ -391,7 +404,7 @@ static STD_ReturnType I2C_GPIO_Init(I2C_Number_t i2cNumber){
                 .port = GPIO_PORTB,
                 .pin = GPIO_PIN_4,
                 .mode = GPIO_MODE_AF,
-                .speed = GPIO_SPEED_HIGH,
+                .speed = GPIO_SPEED_VERY_HIGH,
                 .outputType = GPIO_OUTPUT_OPENDRAIN,
                 .pullType = GPIO_NOPULL,
                 .altFunc = GPIO_AF9_I2C2_3
