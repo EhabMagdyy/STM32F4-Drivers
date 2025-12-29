@@ -23,6 +23,12 @@ STD_ReturnType GPIO_Init(GPIO_t* gpio){
                 // Configure OSPEEDR
                 ret |= GPIO_SetSpeed(gpio, gpio->speed);
             }
+            else if(gpio->mode == GPIO_MODE_AF){
+                // For AF mode, configure OTYPER
+                ret |= GPIO_SetOutputType(gpio, gpio->outputType);
+                // Configure OSPEEDR
+                ret |= GPIO_SetSpeed(gpio, gpio->speed);
+            }
             else{
                 // Nothing
             }
