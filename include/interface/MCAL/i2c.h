@@ -16,16 +16,6 @@ typedef enum{
 } I2C_Number_t;
 
 typedef enum{
-    I2C_BUS_MODE,
-    I2C_SMBUS_MODE
-} I2C_Bus_Mode_t;
-
-typedef enum{
-    I2C_SMBUS_TYPE_DEVICE,
-    I2C_SMBUS_TYPE_HOST
-} I2C_SMBUS_Type_t;
-
-typedef enum{
     I2C_MASTER_MODE,
     I2C_SLAVE_MODE
 } I2C_Mode_t;
@@ -60,7 +50,5 @@ STD_ReturnType I2C_Init(const I2C_Config_t* config);
 STD_ReturnType I2C_DeInit(const I2C_Config_t* config);
 STD_ReturnType I2C_Master_Transmit(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer, uint32_t timeoutMS);
 STD_ReturnType I2C_Master_Receive(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer, uint32_t timeoutMS);
-STD_ReturnType I2C_Slave_Transmit(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer, uint32_t timeoutMS);
-STD_ReturnType I2C_Slave_Receive(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer, uint32_t timeoutMS);
 
 #endif // I2C_H

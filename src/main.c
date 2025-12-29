@@ -10,6 +10,9 @@
 #include "interface/MCAL/uart.h"
 #include "interface/MCAL/dma.h"
 #include "interface/HAL/hserial.h"
+#include "interface/MCAL/spi.h"
+#include "interface/HAL/hspi.h"
+#include "interface/MCAL/i2c.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -17,47 +20,22 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
-uint8_t d1[12] = "Ehab1234567"; 
-uint8_t d2[12] = {0}; 
+uint8_t i2c1Data[1] = "E";
+uint8_t i2c2Data[1] = "M";
 
-void myTxCallback(void){
-    LED_Toggle(LED_0);
-}
-
-void myRxCallback(void){
-    LED_Toggle(LED_1);
-}
-
-UART_Config_t uart1_config = {
-    .UartInstance = UART1,
-    .BaudRate = UART_BAUDRATE_115200,
-    .DataBits = UART_DATABITS_8,
-    .Parity = UART_PARITY_NONE,
-    .port = GPIO_PORTA,
-    .txPin = GPIO_PIN_9,
-    .txCallback = myTxCallback,
-    .rxCallback = myRxCallback,
-    .dmaEnable = UART_DMA_DISABLE
+I2C_Buffer_t i2c1Buffer = {
+    .data = i2c1Data,
+    .length = 1,
+    .index = 0
 };
 
-HSerial_Buffer_t hserial_txBuffer = {
-    .buffer.data = d1,
-    .buffer.index = 0,
-    .buffer.length = 12
-};
-
-HSerial_Buffer_t hserial_rxBuffer = {
-    .buffer.data = d2,
-    .buffer.index = 0,
-    .buffer.length = 12
-};
-
-HSerial_Config_t hserialConfig = {
-    .uartConfig = &uart1_config,
-    .txDma = NULL,
-    .rxDma = NULL,
-    .txBuffer = &hserial_txBuffer,
-    .rxBuffer = &hserial_rxBuffer
+I2C_Config_t i2c1Config = {
+    .i2cNumber = I2C_1,
+    .mode = I2C_MASTER_MODE,
+    .apb1ClockFreq = 42000000U, // 42 MHz
+    .busSpeed = I2C_BUS_SPEED_STANDARD, // 100 kHz
+    .addrMode = I2C_7BIT_ADDR_MODE,
+    .dmaEnable = I2C_DMA_DISABLE
 };
 
 int main(){
@@ -69,19 +47,17 @@ int main(){
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-
-    ret = HSerial_Init(&hserialConfig, SYSTICK_CLOCK_SOURCE_PLL_MAX);
+    ret = I2C_Init(&i2c1Config);
 
     while(1){
-        ret = HSerial_ReceiveBufferIT(&hserialConfig);
-        if(ret != STD_SUCCESS){
-            continue;
-        }
-        ret = HSerial_SendBufferIT(&hserialConfig);
-        if(ret != STD_SUCCESS){
-            continue;
-        }
-        SYSTICK_DelayMS(1000);
+        ret = I2C_Master_Transmit(&i2c1Config, 0x52, &i2c1Buffer, 1000);
+        LED_Toggle(LED_0);
+        SYSTICK_DelayMS(500);
+        i2c1Buffer.data[0] = 'M';
+        ret = I2C_Master_Transmit(&i2c1Config, 0x52, &i2c1Buffer, 1000);
+        LED_Toggle(LED_0);
+        SYSTICK_DelayMS(500);
+        i2c1Buffer.data[0] = 'E';
     }
     
     return 0;
