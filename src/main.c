@@ -13,6 +13,7 @@
 #include "interface/MCAL/spi.h"
 #include "interface/HAL/hspi.h"
 #include "interface/MCAL/i2c.h"
+#include "interface/HAL/hi2c.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -20,7 +21,7 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
-uint8_t i2c1Data[1] = "E";
+uint8_t i2c1Data[2] = "EM";
 uint8_t i2c2Data[1] = "M";
 
 I2C_Buffer_t i2c1Buffer = {
@@ -30,7 +31,7 @@ I2C_Buffer_t i2c1Buffer = {
 };
 
 void i2c1Callback(void){
-    LED_Toggle(LED_1);
+    LED_Toggle(LED_0);
 }
 
 I2C_Config_t i2c1Config = {
@@ -43,6 +44,11 @@ I2C_Config_t i2c1Config = {
     .dmaEnable = I2C_DMA_DISABLE
 };
 
+HI2C_t hi2c1 = {
+    .i2cConfig = &i2c1Config,
+    .dmaInstance = NULL
+};
+
 int main(){
     volatile STD_ReturnType ret = STD_SUCCESS;
     ret = RCC_ConfigureClock(&rcc_pll);
@@ -52,17 +58,18 @@ int main(){
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-    ret = I2C_Init(&i2c1Config);
+    ret = HI2C_Init(&hi2c1);
 
     while(1){
-        ret = I2C_Master_TransmitIT(&i2c1Config, 0x52, &i2c1Buffer);
+        ret = HI2C_Master_TransmitIT(&hi2c1, 0x52, &i2c1Buffer);
         SYSTICK_DelayMS(500);
         i2c1Buffer.data[0] = 'M';
-        ret = I2C_Master_TransmitIT(&i2c1Config, 0x52, &i2c1Buffer);
+        ret = HI2C_Master_TransmitIT(&hi2c1, 0x52, &i2c1Buffer);
         SYSTICK_DelayMS(500);
         i2c1Buffer.data[0] = 'E';
-        ret = I2C_Master_TransmitIT(&i2c1Config, 0x52, &i2c1Buffer);
+        ret = HI2C_Master_TransmitIT(&hi2c1, 0x52, &i2c1Buffer);
         SYSTICK_DelayMS(500);
+        i2c1Buffer.data[0] = 'M';
     }
     
     return 0;
