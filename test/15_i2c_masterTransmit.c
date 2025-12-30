@@ -13,7 +13,6 @@
 #include "interface/MCAL/spi.h"
 #include "interface/HAL/hspi.h"
 #include "interface/MCAL/i2c.h"
-#include "interface/HAL/hi2c.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
