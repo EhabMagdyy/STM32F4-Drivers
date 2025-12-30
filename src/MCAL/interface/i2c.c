@@ -5,6 +5,11 @@
 #include "interface/Core/nvic.h"
 #include "interface/Core/systick.h"
 
+volatile I2C_Buffer_t* i2cBuf[3];
+volatile I2C_State_t i2cState[3] = {I2C_STATE_IDLE};
+volatile uint8_t devAddressIT[3] = {0};
+volatile I2C_Callback_t i2cCallback[3];
+
 static STD_ReturnType I2C_GPIO_Init(I2C_Number_t i2cNumber);
 
 I2C_Registers_t* I2C[3] = {I2C1, I2C2, I2C3};
@@ -89,6 +94,8 @@ STD_ReturnType I2C_Init(const I2C_Config_t* config){
 
         // 6. Enable I2C Peripheral
         I2C[config->i2cNumber]->CR1 |= I2C_CR1_PE;
+
+        i2cCallback[config->i2cNumber] = config->transferCompleteCallback;
     }
 
     return ret;
@@ -313,6 +320,133 @@ STD_ReturnType I2C_Master_Receive(const I2C_Config_t* config, uint16_t devAddres
     }
 
     return STD_SUCCESS;
+}
+
+STD_ReturnType I2C_Master_TransmitIT(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer){
+    STD_ReturnType ret = STD_SUCCESS;
+    if(config == NULL || buffer == NULL || buffer->data == NULL || buffer->length == 0){
+        return STD_ERROR;
+    }
+    else if(i2cState[config->i2cNumber] == I2C_STATE_RX_BUSY || i2cState[config->i2cNumber] == I2C_STATE_TX_BUSY){
+        return STD_BUSY;
+    }
+    else{
+        // Enable I2C Interrupts
+        switch(config->i2cNumber){
+            case I2C_1:
+                NVIC_EnableIRQ(I2C1_EV_IRQn);
+                break;
+            case I2C_2:
+                NVIC_EnableIRQ(I2C2_EV_IRQn);
+                break;
+            case I2C_3:
+                NVIC_EnableIRQ(I2C3_EV_IRQn);
+                break;
+            default:
+                ret = STD_ERROR;
+                break;
+        }
+
+        // Save buffer and set state
+        i2cBuf[config->i2cNumber] = buffer;
+        i2cBuf[config->i2cNumber]->index = 0;
+        devAddressIT[config->i2cNumber] = devAddress & 0xFE;
+        i2cState[config->i2cNumber] = I2C_STATE_TX_BUSY;
+        // Enable TxE & RxNE Interrupts & Event Interrupts (Leave error interrupts disabled for now)
+        I2C[config->i2cNumber]->CR2 |= I2C_CR2_ITBUFEN | I2C_CR2_ITEVTEN;
+        // Generate Start Condition
+        I2C[config->i2cNumber]->CR1 |= I2C_CR1_START;
+    }
+}
+
+STD_ReturnType I2C_Master_ReceiveIT(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer){
+    STD_ReturnType ret = STD_SUCCESS;
+    if(config == NULL || buffer == NULL || buffer->data == NULL || buffer->length == 0){
+        return STD_ERROR;
+    }
+    else if(i2cState[config->i2cNumber] == I2C_STATE_TX_BUSY || i2cState[config->i2cNumber] == I2C_STATE_RX_BUSY){
+        return STD_BUSY;
+    }
+    else{
+        // Enable I2C Interrupts
+        switch(config->i2cNumber){
+            case I2C_1:
+                NVIC_EnableIRQ(I2C1_EV_IRQn);
+                break;
+            case I2C_2:
+                NVIC_EnableIRQ(I2C2_EV_IRQn);
+                break;
+            case I2C_3:
+                NVIC_EnableIRQ(I2C3_EV_IRQn);
+                break;
+            default:
+                ret = STD_ERROR;
+                break;
+        }
+
+        // Save buffer and set state
+        i2cBuf[config->i2cNumber] = buffer;
+        i2cBuf[config->i2cNumber]->index = 0;
+        i2cState[config->i2cNumber] = I2C_STATE_RX_BUSY;
+        I2C[config->i2cNumber]->CR1 |= I2C_CR1_START;
+    }
+}
+
+void I2C1_EV_IRQHandler(void){
+    if(i2cState[I2C_1] == I2C_STATE_TX_BUSY){
+        // Start Condition Generated
+        if(I2C1->SR1 & I2C_SR1_SB){
+            I2C1->DR = devAddressIT[I2C_1]; // Send Slave Address (Write)
+        }
+        else if(I2C1->SR1 & I2C_SR1_ADDR){
+            // Check for ACK Failure (AF)
+            if(I2C1->SR1 & I2C_SR1_AF){
+                I2C1->SR1 &= ~I2C_SR1_AF;    // Clear AF
+                I2C1->CR1 |= I2C_CR1_STOP;   // Generate STOP
+                i2cState[I2C_1] = I2C_STATE_ERROR;
+                return;
+            }
+            // Clear ADDR flag
+            (void)I2C1->SR1;
+            (void)I2C1->SR2;
+        }
+        else if(I2C1->SR1 & I2C_SR1_TxE){
+            if(i2cBuf[I2C_1]->index >= i2cBuf[I2C_1]->length ){
+                // All Data Transmitted
+                I2C1->CR1 |= I2C_CR1_STOP; // Generate Stop Condition
+                i2cState[I2C_1] = I2C_STATE_IDLE;
+                if(i2cCallback[I2C_1]){
+                    i2cCallback[I2C_1]();
+                }
+            }
+            else{
+                I2C1->DR = i2cBuf[I2C_1]->data[i2cBuf[I2C_1]->index++];
+            }
+        }
+    }
+    else if(i2cState[I2C_1] == I2C_STATE_RX_BUSY){
+        // Handle I2C1 Receive Interrupt
+    }
+}
+
+void I2C1_ER_IRQHandler(void){
+    // Handle I2C1 Error Interrupt
+}
+
+void I2C2_EV_IRQHandler(void){
+    // Handle I2C2 Event Interrupt
+}
+
+void I2C2_ER_IRQHandler(void){
+    // Handle I2C2 Error Interrupt
+}
+
+void I2C3_EV_IRQHandler(void){
+    // Handle I2C3 Event Interrupt
+}
+
+void I2C3_ER_IRQHandler(void){
+    // Handle I2C3 Error Interrupt
 }
 
 static STD_ReturnType I2C_GPIO_Init(I2C_Number_t i2cNumber){

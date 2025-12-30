@@ -10,6 +10,13 @@
 #define I2C_DMA_ENABLE  1
 
 typedef enum{
+    I2C_STATE_IDLE,
+    I2C_STATE_TX_BUSY,
+    I2C_STATE_RX_BUSY,
+    I2C_STATE_ERROR
+} I2C_State_t;
+
+typedef enum{
     I2C_1,
     I2C_2,
     I2C_3
@@ -36,6 +43,8 @@ typedef struct{
     uint16_t index;
 } I2C_Buffer_t;
 
+typedef void (*I2C_Callback_t)(void);
+
 typedef struct{
     I2C_Number_t i2cNumber;
     I2C_Mode_t mode;
@@ -43,6 +52,7 @@ typedef struct{
     I2C_Bus_Speed_t busSpeed;
     I2C_ADDR_MODE_t addrMode;
     uint16_t ownAddress;  // 7-bit or 10-bit address
+    I2C_Callback_t transferCompleteCallback;
     uint8_t dmaEnable;
 } I2C_Config_t;
 
@@ -50,5 +60,8 @@ STD_ReturnType I2C_Init(const I2C_Config_t* config);
 STD_ReturnType I2C_DeInit(const I2C_Config_t* config);
 STD_ReturnType I2C_Master_Transmit(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer, uint32_t timeoutMS);
 STD_ReturnType I2C_Master_Receive(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer, uint32_t timeoutMS);
+
+STD_ReturnType I2C_Master_TransmitIT(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer);
+STD_ReturnType I2C_Master_ReceiveIT(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer);
 
 #endif // I2C_H

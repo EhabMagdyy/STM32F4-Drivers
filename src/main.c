@@ -29,12 +29,17 @@ I2C_Buffer_t i2c1Buffer = {
     .index = 0
 };
 
+void i2c1Callback(void){
+    LED_Toggle(LED_1);
+}
+
 I2C_Config_t i2c1Config = {
     .i2cNumber = I2C_1,
     .mode = I2C_MASTER_MODE,
     .apb1ClockFreq = 42000000U, // 42 MHz
     .busSpeed = I2C_BUS_SPEED_STANDARD, // 100 kHz
     .addrMode = I2C_7BIT_ADDR_MODE,
+    .transferCompleteCallback = i2c1Callback,
     .dmaEnable = I2C_DMA_DISABLE
 };
 
@@ -50,14 +55,14 @@ int main(){
     ret = I2C_Init(&i2c1Config);
 
     while(1){
-        ret = I2C_Master_Transmit(&i2c1Config, 0x52, &i2c1Buffer, 1000);
-        LED_Toggle(LED_0);
+        ret = I2C_Master_TransmitIT(&i2c1Config, 0x52, &i2c1Buffer);
         SYSTICK_DelayMS(500);
         i2c1Buffer.data[0] = 'M';
-        ret = I2C_Master_Transmit(&i2c1Config, 0x52, &i2c1Buffer, 1000);
-        LED_Toggle(LED_0);
+        ret = I2C_Master_TransmitIT(&i2c1Config, 0x52, &i2c1Buffer);
         SYSTICK_DelayMS(500);
         i2c1Buffer.data[0] = 'E';
+        ret = I2C_Master_TransmitIT(&i2c1Config, 0x52, &i2c1Buffer);
+        SYSTICK_DelayMS(500);
     }
     
     return 0;
