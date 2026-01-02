@@ -22,16 +22,19 @@ RCC_CFG_t rcc_pll = {
 };
 
 uint8_t i2c1Data[3] = "EMZ";
-uint8_t i2c2Data[1] = "M";
+uint8_t i2c2Data[3];
 
 I2C_Buffer_t i2c1Buffer = {
-    .data = i2c1Data,
+    .data = i2c2Data,
     .length = 3,
     .index = 0
 };
 
 void i2c1Callback(void){
-    LED_Toggle(LED_0);
+    if(i2c1Buffer.data[0] == 'E')
+        LED_Toggle(LED_0);
+    else if(i2c1Buffer.data[0] == 'M')
+        LED_Toggle(LED_1);
 }
 
 I2C_Config_t i2c1Config = {
@@ -56,15 +59,8 @@ int main(){
     ret = I2C_Init(&i2c1Config);
 
     while(1){
-        ret = I2C_Master_TransmitIT(&i2c1Config, 0x52, &i2c1Buffer);
+        ret = I2C_Master_ReceiveIT(&i2c1Config, 0x52, &i2c1Buffer);
         SYSTICK_DelayMS(500);
-        i2c1Buffer.data[0] = 'M';
-        ret = I2C_Master_TransmitIT(&i2c1Config, 0x52, &i2c1Buffer);
-        SYSTICK_DelayMS(500);
-        i2c1Buffer.data[0] = 'E';
-        ret = I2C_Master_TransmitIT(&i2c1Config, 0x52, &i2c1Buffer);
-        SYSTICK_DelayMS(500);
-        i2c1Buffer.data[0] = 'M';
     }
     
     return 0;

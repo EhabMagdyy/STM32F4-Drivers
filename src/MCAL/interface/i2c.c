@@ -356,6 +356,7 @@ STD_ReturnType I2C_Master_TransmitIT(const I2C_Config_t* config, uint16_t devAdd
                 break;
         }
     }
+    return ret;
 }
 
 STD_ReturnType I2C_Master_ReceiveIT(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer){
@@ -367,6 +368,17 @@ STD_ReturnType I2C_Master_ReceiveIT(const I2C_Config_t* config, uint16_t devAddr
         return STD_BUSY;
     }
     else{
+        // Save buffer and set state
+        i2cBuf[config->i2cNumber] = buffer;
+        i2cBuf[config->i2cNumber]->index = 0;
+        i2cState[config->i2cNumber] = I2C_STATE_RX_BUSY;
+        devAddressIT[config->i2cNumber] = devAddress & 0xFE;
+        // Enable TxE & RxNE Interrupts & Event Interrupts (Leave error interrupts disabled for now)
+        I2C[config->i2cNumber]->CR2 |= I2C_CR2_ITBUFEN | I2C_CR2_ITEVTEN;
+        // Enable ACK
+        I2C[config->i2cNumber]->CR1 |= I2C_CR1_ACK;
+        // Generate Start Condition
+        I2C[config->i2cNumber]->CR1 |= I2C_CR1_START;
         // Enable I2C Interrupts
         switch(config->i2cNumber){
             case I2C_1:
@@ -382,47 +394,105 @@ STD_ReturnType I2C_Master_ReceiveIT(const I2C_Config_t* config, uint16_t devAddr
                 ret = STD_ERROR;
                 break;
         }
+    }
+    return ret;
+}
 
-        // Save buffer and set state
-        i2cBuf[config->i2cNumber] = buffer;
-        i2cBuf[config->i2cNumber]->index = 0;
-        i2cState[config->i2cNumber] = I2C_STATE_RX_BUSY;
-        I2C[config->i2cNumber]->CR1 |= I2C_CR1_START;
+void I2C_EV_Handler(I2C_Registers_t* I2Cx, I2C_Number_t i2cNumber){
+    // TX Handler
+    if(i2cState[i2cNumber] == I2C_STATE_TX_BUSY){
+        if(I2Cx->SR1 & I2C_SR1_SB){
+            I2Cx->DR = devAddressIT[i2cNumber];
+        }
+        else if(I2Cx->SR1 & I2C_SR1_ADDR){
+            // Check for ACK Failure (AF)
+            if(I2Cx->SR1 & I2C_SR1_AF){ 
+                I2Cx->SR1 &= ~I2C_SR1_AF; // Clear AF 
+                I2Cx->CR1 |= I2C_CR1_STOP; // Generate STOP 
+                i2cState[i2cNumber] = I2C_STATE_ERROR; 
+                return; 
+            }
+            // Clear ADDR flag 
+            (void)I2Cx->SR1;
+            (void)I2Cx->SR2;
+        }
+        else if(I2Cx->SR1 & I2C_SR1_TxE && i2cBuf[i2cNumber]->index < i2cBuf[i2cNumber]->length){
+            I2Cx->DR = i2cBuf[i2cNumber]->data[i2cBuf[i2cNumber]->index++];
+        }
+        // BTF check
+        if(i2cBuf[i2cNumber]->index == i2cBuf[i2cNumber]->length && (I2Cx->SR1 & I2C_SR1_BTF)){
+            // Last byte finished shifting
+            I2Cx->CR1 |= I2C_CR1_STOP;
+            i2cState[i2cNumber] = I2C_STATE_IDLE;
+            // Disable Interrupts
+            switch(i2cNumber){
+                case I2C_1:
+                    NVIC_DisableIRQ(I2C1_EV_IRQn);
+                    break;
+                case I2C_2:
+                    NVIC_DisableIRQ(I2C2_EV_IRQn);
+                    break;
+                case I2C_3:
+                    NVIC_DisableIRQ(I2C3_EV_IRQn);
+                    break;
+                default:
+                    break;
+            }
+            if(i2cCallback[i2cNumber]){
+                i2cCallback[i2cNumber]();
+            }
+        }
+    }
+    // RX Handler
+    else if(i2cState[i2cNumber] == I2C_STATE_RX_BUSY){
+        if(I2Cx->SR1 & I2C_SR1_SB){
+            I2Cx->DR = devAddressIT[i2cNumber] | 0x01; // Read
+        }
+        else if(I2Cx->SR1 & I2C_SR1_ADDR){
+            // Clear ADDR flag
+            (void)I2Cx->SR1;
+            (void)I2Cx->SR2;
+
+            if(i2cBuf[i2cNumber]->length == 1){
+                I2Cx->CR1 &= ~I2C_CR1_ACK; // NACK
+                I2Cx->CR1 |= I2C_CR1_STOP; // STOP
+            }
+        }
+        else if(I2Cx->SR1 & I2C_SR1_RxNE){
+            i2cBuf[i2cNumber]->data[i2cBuf[i2cNumber]->index++] = I2Cx->DR;
+            // Check for last byte (Send NACK to stop reception)
+            if(i2cBuf[i2cNumber]->index == i2cBuf[i2cNumber]->length - 1){
+                I2Cx->CR1 &= ~I2C_CR1_ACK; // NACK next
+                I2Cx->CR1 |= I2C_CR1_STOP; // STOP
+            }
+            // Check for all bytes received
+            else if(i2cBuf[i2cNumber]->index == i2cBuf[i2cNumber]->length){
+                i2cState[i2cNumber] = I2C_STATE_IDLE;
+                i2cState[i2cNumber] = I2C_STATE_IDLE;
+                // Disable Interrupts
+                switch(i2cNumber){
+                    case I2C_1:
+                        NVIC_DisableIRQ(I2C1_EV_IRQn);
+                        break;
+                    case I2C_2:
+                        NVIC_DisableIRQ(I2C2_EV_IRQn);
+                        break;
+                    case I2C_3:
+                        NVIC_DisableIRQ(I2C3_EV_IRQn);
+                        break;
+                    default:
+                        break;
+                }
+                if(i2cCallback[i2cNumber]){
+                    i2cCallback[i2cNumber]();
+                }
+            }
+        }
     }
 }
 
 void I2C1_EV_IRQHandler(void){
-    // Inside EV IRQ
-    if(i2cState[I2C_1] == I2C_STATE_TX_BUSY){
-        if(I2C1->SR1 & I2C_SR1_SB){
-            I2C1->DR = devAddressIT[I2C_1];
-        }
-        else if(I2C1->SR1 & I2C_SR1_ADDR){
-            // Check for ACK Failure (AF)
-            if(I2C1->SR1 & I2C_SR1_AF){ 
-                I2C1->SR1 &= ~I2C_SR1_AF; // Clear AF 
-                I2C1->CR1 |= I2C_CR1_STOP; // Generate STOP 
-                i2cState[I2C_1] = I2C_STATE_ERROR; 
-                return; 
-            }
-            // Clear ADDR flag 
-            (void)I2C1->SR1;
-            (void)I2C1->SR2;
-        }
-        else if(I2C1->SR1 & I2C_SR1_TxE && i2cBuf[I2C_1]->index < i2cBuf[I2C_1]->length){
-            I2C1->DR = i2cBuf[I2C_1]->data[i2cBuf[I2C_1]->index++];
-        }
-        // BTF check
-        if(i2cBuf[I2C_1]->index == i2cBuf[I2C_1]->length && (I2C1->SR1 & I2C_SR1_BTF)){
-            // Last byte finished shifting
-            I2C1->CR1 |= I2C_CR1_STOP;
-            i2cState[I2C_1] = I2C_STATE_IDLE;
-            NVIC_DisableIRQ(I2C1_EV_IRQn);
-            if(i2cCallback[I2C_1]){
-                i2cCallback[I2C_1]();
-            }
-        }
-    }
+    I2C_EV_Handler(I2C1, I2C_1);
 }
 
 
@@ -431,7 +501,7 @@ void I2C1_ER_IRQHandler(void){
 }
 
 void I2C2_EV_IRQHandler(void){
-    // Handle I2C2 Event Interrupt
+    I2C_EV_Handler(I2C2, I2C_2);
 }
 
 void I2C2_ER_IRQHandler(void){
@@ -439,7 +509,7 @@ void I2C2_ER_IRQHandler(void){
 }
 
 void I2C3_EV_IRQHandler(void){
-    // Handle I2C3 Event Interrupt
+    I2C_EV_Handler(I2C3, I2C_3);
 }
 
 void I2C3_ER_IRQHandler(void){
