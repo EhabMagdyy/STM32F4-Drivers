@@ -52,7 +52,8 @@ typedef struct{
     I2C_Bus_Speed_t busSpeed;
     I2C_ADDR_MODE_t addrMode;
     uint16_t ownAddress;  // 7-bit or 10-bit address
-    I2C_Callback_t transferCompleteCallback;
+    I2C_Callback_t transmitCallback;
+    I2C_Callback_t receiveCallback;
     uint8_t dmaEnable;
 } I2C_Config_t;
 

@@ -8,7 +8,8 @@
 volatile I2C_Buffer_t* i2cBuf[3];
 volatile I2C_State_t i2cState[3] = {I2C_STATE_IDLE};
 volatile uint8_t devAddressIT[3] = {0};
-volatile I2C_Callback_t i2cCallback[3];
+volatile I2C_Callback_t i2cTransmitCallback[3];
+volatile I2C_Callback_t i2cReceiveCallback[3];
 
 static STD_ReturnType I2C_GPIO_Init(I2C_Number_t i2cNumber);
 
@@ -95,7 +96,8 @@ STD_ReturnType I2C_Init(const I2C_Config_t* config){
         // 6. Enable I2C Peripheral
         I2C[config->i2cNumber]->CR1 |= I2C_CR1_PE;
 
-        i2cCallback[config->i2cNumber] = config->transferCompleteCallback;
+        i2cTransmitCallback[config->i2cNumber] = config->transmitCallback;
+        i2cReceiveCallback[config->i2cNumber] = config->receiveCallback;
     }
 
     return ret;
@@ -442,8 +444,8 @@ void I2C_EV_Handler(I2C_Registers_t* I2Cx, I2C_Number_t i2cNumber){
                 default:
                     break;
             }
-            if(i2cCallback[i2cNumber]){
-                i2cCallback[i2cNumber]();
+            if(i2cTransmitCallback[i2cNumber]){
+                i2cTransmitCallback[i2cNumber]();
             }
         }
     }
@@ -487,8 +489,8 @@ void I2C_EV_Handler(I2C_Registers_t* I2Cx, I2C_Number_t i2cNumber){
                     default:
                         break;
                 }
-                if(i2cCallback[i2cNumber]){
-                    i2cCallback[i2cNumber]();
+                if(i2cReceiveCallback[i2cNumber]){
+                    i2cReceiveCallback[i2cNumber]();
                 }
             }
         }
