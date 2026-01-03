@@ -10,7 +10,7 @@ typedef struct {
     void (*callback)(void* arg);
     uint32_t Periodicity;
     uint8_t FirstDelay;
-    uint8_t arg;
+    void* arg;
 } Runnable__t;
 
 STD_ReturnType Scheduler_Init(SYSTICK_ClockSource_t clockSource ,uint32_t tickTimeMS);
