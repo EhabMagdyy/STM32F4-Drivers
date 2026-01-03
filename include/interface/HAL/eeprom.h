@@ -10,8 +10,8 @@ typedef struct{
 
 STD_ReturnType EEPROM_Init(const EEPROM_Config_t* config);
 STD_ReturnType EEPROM_DeInit(const EEPROM_Config_t* config);
-STD_ReturnType EEPROM_ReadData(const EEPROM_Config_t* config, uint16_t address, uint8_t* data);
-STD_ReturnType EEPROM_WriteData(const EEPROM_Config_t* config, uint16_t address, uint8_t data);
+STD_ReturnType EEPROM_WriteData(const EEPROM_Config_t* config, uint16_t address, uint8_t* data, uint8_t length);
+STD_ReturnType EEPROM_ReadData(const EEPROM_Config_t* config, uint16_t address, uint8_t* data, uint8_t length);
 STD_ReturnType EEPROM_WritePage(const EEPROM_Config_t* config, uint16_t address, const I2C_Buffer_t* buffer);
 STD_ReturnType EEPROM_ReadPage(const EEPROM_Config_t* config, uint16_t address, const I2C_Buffer_t* buffer);
 

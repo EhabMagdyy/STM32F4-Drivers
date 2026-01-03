@@ -22,17 +22,14 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
-uint8_t dataAddr = 0x00;
-
-I2C_Buffer_t data = {
-    .data = &dataAddr,
-    .length = 1,
-    .index = 0
-};
+uint8_t dataAddr[16] = {0x00};
 
 void i2c1Callback(void){
-    if(dataAddr == 0xEE){
+    if(dataAddr[0] == 0xAA){
         LED_Toggle(LED_0);
+    }
+    if(dataAddr[15] == 0x05){
+        LED_Toggle(LED_1);
     }
 }
 
@@ -62,9 +59,12 @@ int main(){
     ret = LED_Init();
     ret = EEPROM_Init(&eepromConfig);
 
-    EEPROM_WriteData(&eepromConfig, 0x0000, 0xEE);
-    SYSTICK_DelayMS(10);
-    EEPROM_ReadData(&eepromConfig, 0x0000, &dataAddr);
+    uint8_t writeData[16] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22,
+                             0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x05};
+
+    EEPROM_WriteData(&eepromConfig, 0x0000, writeData, 16);
+    SYSTICK_DelayMS(50);
+    EEPROM_ReadData(&eepromConfig, 0x0000, dataAddr, 16);
 
     while(1){
         
