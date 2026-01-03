@@ -125,13 +125,14 @@ STD_ReturnType EEPROM_WriteVerify(const EEPROM_Config_t* config, uint8_t address
             // Prepare I2C buffer
             i2cAddr.data = &blockAddress;
             i2cAddr.length = 1;
-            i2cBuffer.length = length;
-            i2cBuffer.data = rxData;
             // Send memory address
             ret = I2C_Master_TransmitIT(config->i2cConfig, config->deviceAddress | (address >> 8), &i2cAddr);
             eepromState = EEPROM_READ_DATA;
         }
         else if(eepromState == EEPROM_READ_DATA){
+            i2cBuffer.length = length;
+            i2cBuffer.data = rxData;
+            // Receive data from EEPROM
             ret = I2C_Master_ReceiveIT(config->i2cConfig, config->deviceAddress | (address >> 8), &i2cBuffer);
             eepromState = EEPROM_IDLE;
         }
