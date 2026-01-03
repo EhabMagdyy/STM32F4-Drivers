@@ -64,5 +64,7 @@ STD_ReturnType I2C_Master_Receive(const I2C_Config_t* config, uint16_t devAddres
 STD_ReturnType I2C_Master_TransmitIT(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer);
 STD_ReturnType I2C_Master_ReceiveIT(const I2C_Config_t* config, uint16_t devAddress, I2C_Buffer_t* buffer);
 
+I2C_State_t I2C_GetState(I2C_Number_t i2cNumber);
+
 
 #endif // I2C_H

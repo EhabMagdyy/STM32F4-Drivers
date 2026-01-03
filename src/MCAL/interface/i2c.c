@@ -398,6 +398,10 @@ STD_ReturnType I2C_Master_ReceiveIT(const I2C_Config_t* config, uint16_t devAddr
     return ret;
 }
 
+I2C_State_t I2C_GetState(I2C_Number_t i2cNumber){
+    return i2cState[i2cNumber];
+}
+
 void I2C_EV_Handler(I2C_Registers_t* I2Cx, I2C_Number_t i2cNumber){
     // TX Handler
     if(i2cState[i2cNumber] == I2C_STATE_TX_BUSY){
