@@ -48,9 +48,11 @@ EEPROM_Config_t eepromConfig = {
 
 void EEPROM_Runnable(void* arg){
     static uint8_t counter = 0;
+    static STD_ReturnType ret = STD_SUCCESS;
     if(counter < 3){
-        EEPROM_WriteVerify(&eepromConfig, 0x00, writeData, dataAddr, 16);
-        counter++;
+        ret = EEPROM_WriteVerify(&eepromConfig, 0x00, writeData, dataAddr, 16);
+        if(ret == STD_SUCCESS)
+            counter++;
     }
     else if(counter == 3){
         uint8_t match = 1;
