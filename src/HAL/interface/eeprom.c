@@ -104,7 +104,7 @@ STD_ReturnType EEPROM_ReadPage(const EEPROM_Config_t* config, uint8_t addressOff
     return ret;
 }
 
-STD_ReturnType EEPROM_WriteVerify(const EEPROM_Config_t* config, uint8_t address, uint8_t* txData, uint8_t* rxData, uint8_t length){
+STD_ReturnType EEPROM_WriteVerify(const EEPROM_Config_t* config, uint16_t address, uint8_t* txData, uint8_t* rxData, uint8_t length){
     STD_ReturnType ret = STD_SUCCESS;
     if(config == NULL || txData == NULL || rxData == NULL){
         ret = STD_ERROR;
