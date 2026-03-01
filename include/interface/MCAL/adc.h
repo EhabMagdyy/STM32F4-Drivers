@@ -64,10 +64,28 @@ typedef struct {
     ADC_Channel_t channel;
     ADC_Resolution_t resolution;
     ADC_SampleTime_t sampleTime;
-    ADC_SeqLength_t seqLength;
 } ADC_t;
 
+/**
+ * @brief  Initializes the ADC peripheral with the specified configuration.
+ * @param  config: Pointer to an ADC_t structure containing the desired ADC configuration.
+ * @retval STD_SUCCESS if the ADC was initialized successfully, otherwise STD_ERROR.
+ */
 STD_ReturnType ADC_Init(ADC_t* config);
+/**
+ * @brief  Performs a single ADC conversion and retrieves the converted value.
+ * @param  config: Pointer to an ADC_t structure containing the ADC configuration for the conversion.
+ * @param  value: Pointer to a uint16_t variable where the converted ADC value will be stored.
+ * @retval STD_SUCCESS if the conversion was successful, otherwise STD_ERROR.
+ */
 STD_ReturnType ADC_SingleRead(ADC_t* config, uint16_t* value);
+/**
+ * @brief  Performs continuous ADC conversions and retrieves the converted values into an array.
+ * @param  config: Pointer to an ADC_t structure containing the ADC configuration for the conversions.
+ * @param  arr: Pointer to a uint16_t array where the converted ADC values will be stored.
+ * @param  length: The number of ADC conversions to perform and store in the array.
+ * @retval STD_SUCCESS if the conversions were successful, otherwise STD_ERROR.
+ */
+STD_ReturnType ADC_ContinousRead(ADC_t* config, uint16_t* arr, uint8_t length);
 
 #endif /* ADC_H */

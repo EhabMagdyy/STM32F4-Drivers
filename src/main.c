@@ -24,7 +24,6 @@ ADC_t adc3 = {
     .channel = ADC_CHANNEL_3,
     .resolution = ADC_RESOLUTION_12BIT,
     .sampleTime = ADC_SAMPLETIME_84CYCLES,
-    .seqLength = ADC_SEQ_LENGTH_1
 };
 
 int main(){
@@ -38,27 +37,10 @@ int main(){
     ret = LED_Init();
     ret = ADC_Init(&adc3);
 
-    uint16_t adcValue = 0;
+    uint16_t adcValue[10] = {0};
 
     while(1){
-        ADC_SingleRead(&adc3, &adcValue);
-        if(adcValue > 3200){
-            LED_SetState(LED_0, LED_HIGH);
-            LED_SetState(LED_1, LED_HIGH);
-        }
-        else if (adcValue <= 800){
-            LED_SetState(LED_0, LED_LOW);
-            LED_SetState(LED_1, LED_LOW);
-        }
-        else if (adcValue <= 1600){
-            LED_SetState(LED_0, LED_HIGH);
-            LED_SetState(LED_1, LED_LOW);
-        }
-        else if (adcValue <= 2400){
-            LED_SetState(LED_0, LED_LOW);
-            LED_SetState(LED_1, LED_HIGH);
-        }
-        
+        ADC_ContinousRead(&adc3, adcValue, 10);        
         SYSTICK_DelayMS(1000);
     }
     

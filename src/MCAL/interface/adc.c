@@ -7,6 +7,7 @@ STD_ReturnType ADC_Init(ADC_t* config){
     if(config == NULL){
         return STD_ERROR;
     }
+    
     // Enable RCC for ADC peripheral
     STD_ReturnType status = RCC_ControlPeripheral(RCC_ADC1, RCC_PERIPHERAL_ENABLE);
     if(status != STD_SUCCESS){
@@ -15,10 +16,6 @@ STD_ReturnType ADC_Init(ADC_t* config){
 
     // Set Resolution
     ADC->CR1 |= (config->resolution << 24);
-
-    // Set Channel
-    ADC->SQR1 = (config->seqLength << 20);  // Set regular sequence length
-    ADC->SQR3 = (config->channel & 0x1F);   // Set first conversion in regular sequence to the specified channel
 
     // Set Sample Time
     uint32_t sampleTimeBits = (config->sampleTime & 0x7) << (config->channel * 3);
@@ -52,6 +49,11 @@ STD_ReturnType ADC_SingleRead(ADC_t* config, uint16_t* value){
         return STD_ERROR;
     }
 
+    // Select which channel you’re about to convert
+    ADC->SQR3 = (config->channel & 0x1F);   // Set first conversion in regular sequence to the specified channel,
+                                            // adc will will go to this channel first when conversion starts,
+                                            // if seqLength > 1, it will continue to next channels in SQR3, SQR2, SQR1
+
     // Start conversion
     ADC->CR2 |= (1 << 30); // SWSTART bit
 
@@ -59,6 +61,29 @@ STD_ReturnType ADC_SingleRead(ADC_t* config, uint16_t* value){
     while((ADC->SR & (1 << 1)) == 0); // Wait for EOC bit
 
     *value = ADC->DR & 0xFFFF; // Read the result from data register
+
+    return STD_SUCCESS;
+}
+
+STD_ReturnType ADC_ContinousRead(ADC_t* config, uint16_t* arr, uint8_t length){
+    if(config == NULL || arr == NULL || length == 0){
+        return STD_ERROR;
+    }
+
+    // Select which channel you’re about to convert
+    ADC->SQR3 = (config->channel & 0x1F); 
+
+    // Enable continuous mode
+    ADC->CR2 |= (1 << 1);     // CONT
+
+    // Start conversion
+    ADC->CR2 |= (1 << 30);    // SWSTART
+
+    while(length--){
+        // Wait for conversion to complete
+        while((ADC->SR & (1 << 1)) == 0); // Wait for EOC bit
+        *arr++ = ADC->DR & 0xFFFF;        // Read the result from data register
+    }
 
     return STD_SUCCESS;
 }
