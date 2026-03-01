@@ -60,11 +60,14 @@ typedef enum {
     ADC_SEQ_LENGTH_16
 } ADC_SeqLength_t;
 
+typedef void (*ADC_Callback_t)(void);
+
 typedef struct {
     ADC_Channel_t* channels;
     uint8_t numChannels;
     ADC_Resolution_t resolution;
     ADC_SampleTime_t sampleTime;
+    ADC_Callback_t callback;
 } ADC_t;
 
 /**
@@ -83,19 +86,35 @@ STD_ReturnType ADC_SingleRead(ADC_Channel_t channel, uint16_t* value);
 /**
  * @brief  Performs continuous ADC conversions and retrieves the converted values into an array.
  * @param  channel: The ADC channel to convert.
- * @param  arr: Pointer to a uint16_t array where the converted ADC values will be stored.
+ * @param  buffer: Pointer to a uint16_t array where the converted ADC values will be stored.
  * @param  noOfReadings: The number of ADC conversions to perform and store in the array.
  * @retval STD_SUCCESS if the conversions were successful, otherwise STD_ERROR.
  */
-STD_ReturnType ADC_ContinousRead(ADC_Channel_t channel, uint16_t* arr, uint8_t noOfReadings);
+STD_ReturnType ADC_ContinousRead(ADC_Channel_t channel, uint16_t* buffer, uint8_t noOfReadings);
 /**
  * @brief  Performs ADC conversions in scan mode for multiple channels and retrieves the converted values into an array.
  * @param  channels: array of the channels in the sequence
  * @param  seqLength: The number of channels in the sequence.
- * @param  arr: Pointer to a uint16_t array where the converted ADC values will be stored.
+ * @param  buffer: Pointer to a uint16_t array where the converted ADC values will be stored.
  * @param  noOfLoops: The number of ADC loops on the entire sequence to perform and store in the array.
  * @retval STD_SUCCESS if the conversions were successful, otherwise STD_ERROR.
  */
-STD_ReturnType ADC_ScanModeRead(ADC_Channel_t* channels, ADC_SeqLength_t seqLength, uint16_t* arr, uint8_t noOfLoops);
+STD_ReturnType ADC_ScanModeRead(ADC_Channel_t* channels, ADC_SeqLength_t seqLength, uint16_t* buffer, uint8_t noOfLoops);
+
+/**
+ * @brief  Performs a single ADC conversion and retrieves the converted value.
+ * @param  channel: The ADC channel to convert.
+ * @param  value: Pointer to a uint16_t variable where the converted ADC value will be stored.
+ * @retval STD_SUCCESS if the conversion was successful, otherwise STD_ERROR.
+ */
+STD_ReturnType ADC_SingleReadIT(ADC_Channel_t channel, uint16_t* value);
+/**
+ * @brief  Performs continuous ADC conversions and retrieves the converted values into an array.
+ * @param  channel: The ADC channel to convert.
+ * @param  buffer: Pointer to a uint16_t array where the converted ADC values will be stored.
+ * @param  noOfReadings: The number of ADC conversions to perform and store in the array.
+ * @retval STD_SUCCESS if the conversions were successful, otherwise STD_ERROR.
+ */
+STD_ReturnType ADC_ContinousReadIT(ADC_Channel_t channel, uint16_t* buffer, uint8_t noOfReadings);
 
 #endif /* ADC_H */

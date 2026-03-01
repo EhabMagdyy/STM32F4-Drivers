@@ -2,6 +2,12 @@
 #include "interface/MCAL/adc.h"
 #include "interface/MCAL/rcc.h"
 #include "interface/MCAL/gpio.h"
+#include "interface/Core/nvic.h"
+
+volatile uint8_t adcNoOfReadings = 0;
+volatile uint16_t* adcBuffer = NULL;
+volatile ADC_Callback_t adcCallback = NULL;
+volatile uint8_t isADCBusy = 0;
 
 STD_ReturnType ADC_Init(ADC_t* config){
     if(config == NULL){
@@ -42,6 +48,9 @@ STD_ReturnType ADC_Init(ADC_t* config){
         GPIO_Init(&pinConfig);
     }
 
+    // Set callback
+    adcCallback = config->callback;
+
     // Enable ADC
     ADC->CR2 |= (1 << 0); // ADON bit
 
@@ -69,8 +78,8 @@ STD_ReturnType ADC_SingleRead(ADC_Channel_t channel, uint16_t* value){
     return STD_SUCCESS;
 }
 
-STD_ReturnType ADC_ContinousRead(ADC_Channel_t channel, uint16_t* arr, uint8_t noOfReadings){
-    if(arr == NULL || noOfReadings == 0){
+STD_ReturnType ADC_ContinousRead(ADC_Channel_t channel, uint16_t* buffer, uint8_t noOfReadings){
+    if(buffer == NULL || noOfReadings == 0){
         return STD_ERROR;
     }
 
@@ -91,8 +100,8 @@ STD_ReturnType ADC_ContinousRead(ADC_Channel_t channel, uint16_t* arr, uint8_t n
 
     while(noOfReadings--){
         // Wait for conversion to complete
-        while((ADC->SR & (1 << 1)) == 0); // Wait for EOC bit
-        *arr++ = ADC->DR & 0xFFFF;        // Read the result from data register
+        while((ADC->SR & (1 << 1)) == 0);    // Wait for EOC bit
+        *buffer++ = ADC->DR & 0xFFFF;        // Read the result from data register
     }
 
     ADC->CR2 &= ~(1 << 1);    // Disable CONT
@@ -103,8 +112,8 @@ STD_ReturnType ADC_ContinousRead(ADC_Channel_t channel, uint16_t* arr, uint8_t n
 
 // Not reccommended in polling mode, better to use with DMA,
 // because channel readings may overwrite each other in DR if the CPU doesn't read them fast enough.
-STD_ReturnType ADC_ScanModeRead(ADC_Channel_t* channels, ADC_SeqLength_t seqLength, uint16_t* arr, uint8_t noOfLoops){
-    if(channels == NULL || arr == NULL || noOfLoops == 0){
+STD_ReturnType ADC_ScanModeRead(ADC_Channel_t* channels, ADC_SeqLength_t seqLength, uint16_t* buffer, uint8_t noOfLoops){
+    if(channels == NULL || buffer == NULL || noOfLoops == 0){
         return STD_ERROR;
     }
 
@@ -149,7 +158,7 @@ STD_ReturnType ADC_ScanModeRead(ADC_Channel_t* channels, ADC_SeqLength_t seqLeng
 
     for(uint16_t i = 0; i < noOfLoops * conversions; i++){
         while(!(ADC->SR & (1 << 1)));  // EOC
-        arr[i] = ADC->DR;
+        buffer[i] = ADC->DR;
     }
 
     ADC->CR1 &= ~(1 << 8);    // Stop scan mode
@@ -157,4 +166,76 @@ STD_ReturnType ADC_ScanModeRead(ADC_Channel_t* channels, ADC_SeqLength_t seqLeng
     ADC->CR2 &= ~(1 << 30);   // Stop ADC conversions
 
     return STD_SUCCESS;
+}
+
+STD_ReturnType ADC_SingleReadIT(ADC_Channel_t channel, uint16_t* buffer){
+    if(buffer == NULL || isADCBusy){
+        return STD_ERROR;
+    }
+
+    isADCBusy = 1;
+    adcNoOfReadings = 1;
+    adcBuffer = buffer;
+    
+    // Select which channel you’re about to convert
+    ADC->SQR3 = (channel & 0x1F);
+
+    // Enable interrupt
+    ADC->CR1 |= (1 << 5); // EOCIE
+
+    // Enable NVIC for ADC
+    NVIC_EnableIRQ(ADC_IRQn);
+
+    // Start conversion
+    ADC->CR2 |= (1 << 30); // SWSTART bit
+
+    return STD_SUCCESS;
+}
+
+STD_ReturnType ADC_ContinousReadIT(ADC_Channel_t channel, uint16_t* buffer, uint8_t noOfReadings){
+    if(buffer == NULL || noOfReadings == 0 || isADCBusy){
+        return STD_ERROR;
+    }
+
+    isADCBusy = 1;
+    adcNoOfReadings = noOfReadings;
+    adcBuffer = buffer;
+
+    // Select which channel you’re about to convert
+    ADC->SQR3 = (channel & 0x1F);
+
+    // Enable interrupt
+    ADC->CR1 |= (1 << 5); // EOCIE
+
+    // Enable NVIC for ADC
+    NVIC_EnableIRQ(ADC_IRQn);
+
+    // Enable continuous mode
+    ADC->CR2 |= (1 << 1);   // CONT
+
+    // Start conversion
+    ADC->CR2 |= (1 << 30);  // SWSTART bit
+
+    return STD_SUCCESS;
+}
+
+void ADC_IRQHandler(void){
+    if(ADC->SR & (1 << 1)){ // Check for EOC interrupt
+        uint16_t adcValue = ADC->DR & 0xFFFF;
+        if(adcNoOfReadings > 0){
+            *adcBuffer++ = adcValue;
+            adcNoOfReadings--;
+        }
+        if(adcNoOfReadings == 0){
+            // Disable EOC interrupt
+            ADC->CR1 &= ~(1 << 5);
+            isADCBusy = 0;
+            // Disable NVIC for ADC
+            NVIC_DisableIRQ(ADC_IRQn);
+            // Call callback function
+            if(adcCallback){
+                adcCallback();
+            }
+        }
+    }
 }

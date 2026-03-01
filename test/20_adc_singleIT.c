@@ -20,23 +20,22 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
-uint16_t mainADCBuffer[10] = {0};
+uint16_t adcValue[10] = {0};
 
 void ADC_Callback(void){
-    volatile uint16_t avg = (mainADCBuffer[0] + mainADCBuffer[1] + mainADCBuffer[2] + mainADCBuffer[3]) / 4;
-    if(avg > 3000){
+    if(adcValue[0] > 3000){
         LED_SetState(LED_0, LED_HIGH);
         LED_SetState(LED_1, LED_HIGH);
     }
-    else if(avg > 2000){
+    else if(adcValue[0] > 2000){
         LED_SetState(LED_0, LED_LOW);
         LED_SetState(LED_1, LED_HIGH);
     }
-    else if(avg > 1000){
+    else if(adcValue[0] > 1000){
         LED_SetState(LED_0, LED_HIGH);
         LED_SetState(LED_1, LED_LOW);
     }
-    else if(avg <= 1000){
+    else if(adcValue[0] <= 1000){
         LED_SetState(LED_0, LED_LOW);
         LED_SetState(LED_1, LED_LOW);
     }
@@ -62,7 +61,7 @@ int main(){
     ret = ADC_Init(&adc345);
 
     while(1){
-        ADC_ContinousReadIT(adc345.channels[0], mainADCBuffer, 4);
+        ADC_SingleReadIT(adc345.channels[0], &adcValue[0]);
         SYSTICK_DelayMS(100);
     }
     
