@@ -20,8 +20,9 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
-ADC_t adc3 = {
-    .channel = ADC_CHANNEL_3,
+ADC_t adc34 = {
+    .channels = (ADC_Channel_t[]){ADC_CHANNEL_3, ADC_CHANNEL_4},
+    .numChannels = 2,   
     .resolution = ADC_RESOLUTION_12BIT,
     .sampleTime = ADC_SAMPLETIME_84CYCLES,
 };
@@ -35,30 +36,15 @@ int main(){
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-    ret = ADC_Init(&adc3);
+    ret = ADC_Init(&adc34);
 
-    uint16_t adcValue = 0;
+    uint16_t adcValue[10] = {0};
 
     while(1){
-        ADC_SingleRead(&adc3, &adcValue);
-        if(adcValue > 3200){
-            LED_SetState(LED_0, LED_HIGH);
-            LED_SetState(LED_1, LED_HIGH);
-        }
-        else if (adcValue <= 800){
-            LED_SetState(LED_0, LED_LOW);
-            LED_SetState(LED_1, LED_LOW);
-        }
-        else if (adcValue <= 1600){
-            LED_SetState(LED_0, LED_HIGH);
-            LED_SetState(LED_1, LED_LOW);
-        }
-        else if (adcValue <= 2400){
-            LED_SetState(LED_0, LED_LOW);
-            LED_SetState(LED_1, LED_HIGH);
-        }
+        ADC_SingleRead(adc34.channels[0], &adcValue[0]);
+        ADC_SingleRead(adc34.channels[1], &adcValue[1]);
         
-        SYSTICK_DelayMS(500);
+        SYSTICK_DelayMS(1000);
     }
     
     return 0;

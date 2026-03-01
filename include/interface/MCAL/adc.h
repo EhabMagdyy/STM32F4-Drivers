@@ -61,7 +61,8 @@ typedef enum {
 } ADC_SeqLength_t;
 
 typedef struct {
-    ADC_Channel_t channel;
+    ADC_Channel_t* channels;
+    uint8_t numChannels;
     ADC_Resolution_t resolution;
     ADC_SampleTime_t sampleTime;
 } ADC_t;
@@ -74,18 +75,27 @@ typedef struct {
 STD_ReturnType ADC_Init(ADC_t* config);
 /**
  * @brief  Performs a single ADC conversion and retrieves the converted value.
- * @param  config: Pointer to an ADC_t structure containing the ADC configuration for the conversion.
+ * @param  channel: The ADC channel to convert.
  * @param  value: Pointer to a uint16_t variable where the converted ADC value will be stored.
  * @retval STD_SUCCESS if the conversion was successful, otherwise STD_ERROR.
  */
-STD_ReturnType ADC_SingleRead(ADC_t* config, uint16_t* value);
+STD_ReturnType ADC_SingleRead(ADC_Channel_t channel, uint16_t* value);
 /**
  * @brief  Performs continuous ADC conversions and retrieves the converted values into an array.
- * @param  config: Pointer to an ADC_t structure containing the ADC configuration for the conversions.
+ * @param  channel: The ADC channel to convert.
  * @param  arr: Pointer to a uint16_t array where the converted ADC values will be stored.
- * @param  length: The number of ADC conversions to perform and store in the array.
+ * @param  noOfReadings: The number of ADC conversions to perform and store in the array.
  * @retval STD_SUCCESS if the conversions were successful, otherwise STD_ERROR.
  */
-STD_ReturnType ADC_ContinousRead(ADC_t* config, uint16_t* arr, uint8_t length);
+STD_ReturnType ADC_ContinousRead(ADC_Channel_t channel, uint16_t* arr, uint8_t noOfReadings);
+/**
+ * @brief  Performs ADC conversions in scan mode for multiple channels and retrieves the converted values into an array.
+ * @param  channels: array of the channels in the sequence
+ * @param  seqLength: The number of channels in the sequence.
+ * @param  arr: Pointer to a uint16_t array where the converted ADC values will be stored.
+ * @param  noOfLoops: The number of ADC loops on the entire sequence to perform and store in the array.
+ * @retval STD_SUCCESS if the conversions were successful, otherwise STD_ERROR.
+ */
+STD_ReturnType ADC_ScanModeRead(ADC_Channel_t* channels, ADC_SeqLength_t seqLength, uint16_t* arr, uint8_t noOfLoops);
 
 #endif /* ADC_H */
