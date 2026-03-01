@@ -11,6 +11,8 @@
 #include "interface/MCAL/dma.h"
 #include "interface/HAL/hserial.h"
 #include "interface/MCAL/spi.h"
+#include "interface/HAL/hspi.h"
+#include "interface/MCAL/adc.h"
 
 RCC_CFG_t rcc_pll = {
     .sysClkSource = RCC_CLOCK_SOURCE_PLL,
@@ -18,35 +20,10 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
-uint8_t d1[12] = "My SPI Works"; 
-uint8_t d2[12] = {0};
-
-void spiCallback(void){
-    if(d2[0] == 'M'){
-        LED_Toggle(LED_0);
-    }
-    if(d2[11] == 's'){
-        LED_Toggle(LED_1);
-    }
-}
-
-SPI_Config_t spi1 = {
-    .spiNum = SPI_1,
-    .mode = SPI_MODE_MASTER,
-    .dataFrame = SPI_DATA_FRAME_16BIT,
-    .baudRatePrescaler = SPI_BAUDRATE_PRESCALER_4,
-    .clockPhase = SPI_CLOCK_PHASE_1EDGE,
-    .clockPolarity = SPI_CLOCK_POLARITY_LOW,
-    .direction = SPI_DIRECTION_2LINES,
-    .frameFormat = SPI_FRAME_FORMAT_MSB_FIRST,
-    .frameFormatStandard = SPI_FRAME_FORMAT_MOTOROLA,
-    .trancieveCallback = spiCallback
-};
-
-SPI_Buffer_t buffer = {
-    .txData = d1,
-    .rxData = d2,
-    .length = 12
+ADC_t adc3 = {
+    .channel = ADC_CHANNEL_3,
+    .resolution = ADC_RESOLUTION_12BIT,
+    .sampleTime = ADC_SAMPLETIME_84CYCLES,
 };
 
 int main(){
@@ -58,11 +35,30 @@ int main(){
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
     ret = LED_Init();
-    ret = SPI_Init(&spi1);
+    ret = ADC_Init(&adc3);
+
+    uint16_t adcValue = 0;
 
     while(1){
-        ret = SPI_TranceiveIT(&spi1, &buffer);
-        SYSTICK_DelayMS(1000);
+        ADC_SingleRead(&adc3, &adcValue);
+        if(adcValue > 3200){
+            LED_SetState(LED_0, LED_HIGH);
+            LED_SetState(LED_1, LED_HIGH);
+        }
+        else if (adcValue <= 800){
+            LED_SetState(LED_0, LED_LOW);
+            LED_SetState(LED_1, LED_LOW);
+        }
+        else if (adcValue <= 1600){
+            LED_SetState(LED_0, LED_HIGH);
+            LED_SetState(LED_1, LED_LOW);
+        }
+        else if (adcValue <= 2400){
+            LED_SetState(LED_0, LED_LOW);
+            LED_SetState(LED_1, LED_HIGH);
+        }
+        
+        SYSTICK_DelayMS(500);
     }
     
     return 0;
