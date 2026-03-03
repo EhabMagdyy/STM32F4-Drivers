@@ -1,6 +1,7 @@
 
 #include "interface/MCAL/rcc.h"
 #include "private/MCAL/rcc_priv.h"
+#include "interface/MCAL/flash.h"
 
 STD_ReturnType RCC_ConfigureClock(const RCC_CFG_t *cfg){
     STD_ReturnType ret = STD_SUCCESS;
@@ -84,8 +85,7 @@ STD_ReturnType RCC_ConfigureClock(const RCC_CFG_t *cfg){
                 // Do nothing
             }
             // C. Set Flash Latency (CRITICAL STEP for 84 MHz)
-            *(uint32_t*)((0x40000000UL + 0x00020000UL) + 0x3C00UL) &= ~0b111;
-            *(uint32_t*)((0x40000000UL + 0x00020000UL) + 0x3C00UL) |= (2 & 0b111);
+            ret = FLASH_SetLatency(FLASH_LATENCY_2WS);
 
             if(ret == STD_SUCCESS){
                 ret = RCC_ConfigurePLL(&(cfg->pllConfig));
