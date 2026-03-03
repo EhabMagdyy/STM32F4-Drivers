@@ -48,6 +48,8 @@ STD_ReturnType RCC_ConfigureClock(const RCC_CFG_t *cfg){
             else{
                 // Do nothing
             }
+            // Set Flash Latency
+            ret = FLASH_SetLatency(FLASH_LATENCY_0WS);  // 0WS for up to 30 MHz
         }
         else if(cfg->sysClkSource == RCC_CLOCK_SOURCE_PLL){
             ret = RCC_SetClock(cfg->pllClkSource, RCC_ENABLE);
@@ -84,8 +86,8 @@ STD_ReturnType RCC_ConfigureClock(const RCC_CFG_t *cfg){
             else{
                 // Do nothing
             }
-            // C. Set Flash Latency (CRITICAL STEP for 84 MHz)
-            ret = FLASH_SetLatency(FLASH_LATENCY_2WS);
+            // C. Set Flash Latency
+            ret = FLASH_SetLatency(FLASH_LATENCY_2WS);  // 2WS from 61 up to 84 MHz
 
             if(ret == STD_SUCCESS){
                 ret = RCC_ConfigurePLL(&(cfg->pllConfig));
