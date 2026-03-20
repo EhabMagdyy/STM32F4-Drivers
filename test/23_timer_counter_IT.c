@@ -30,7 +30,7 @@ Timer_t timer5_config = {
     .instance = TIMER_5,
     .mode = TIMER_MODE_UP,
     .prescaler = 42000 - 1, // 0.5 ms tick
-    .autoReloadValue = 500 - 1, // Auto-reload value for 0.25 second interval
+    .autoReloadValue = 1000 - 1, // Auto-reload value for 0.5 second interval
     .callback = Timer5_Callback
 };
 
@@ -46,15 +46,15 @@ int main(){
 
     ret = Timer_Init(&timer5_config);
     ret = Timer_Start_IT(&timer5_config);
-
+    
     // uint32_t counter = 0;
     *((uint32_t*)0xE0042008) |= 0xF; // Enable debug halt for TIMER2, TIMER3, TIMER4, and TIMER5
 
     while(1){
         // Timer_GetCounter(&timer5_config, &counter);
-        SYSTICK_DelayMS(2000);
+        SYSTICK_DelayMS(5000);
         Timer_Stop_IT(&timer5_config);
-        SYSTICK_DelayMS(2000);
+        SYSTICK_DelayMS(5000);
         Timer_Start_IT(&timer5_config);
     }
     

@@ -1,13 +1,19 @@
 #ifndef TIMER_H
 #define TIMER_H
 
+/** Note:
+    Timers by default doesn't stop when the core is halted by the debugger,
+    if you need to stop the timer when debugging,
+    see the DBGMCU Register and set the corresponding bits for the timers you want to stop during debug halt. 
+**/
+
 #include "../../../lib/STD_Types.h"
 
 typedef enum {
-    TIMER_2,
-    TIMER_3,
-    TIMER_4,
-    TIMER_5
+    TIMER_2,    // TIM2 is a 32-bit timer
+    TIMER_3,    // TIM3 is a 16-bit timer
+    TIMER_4,    // TIM4 is a 16-bit timer
+    TIMER_5     // TIM5 is a 32-bit timer
 } Timer_Instance_t;
 
 typedef enum {
@@ -19,33 +25,30 @@ typedef enum {
 } Timer_Mode_t;
 
 typedef enum {
-    TIMER_CLOCK_DIV_1,
-    TIMER_CLOCK_DIV_2,
-    TIMER_CLOCK_DIV_4
-} Timer_ClockDivision_t;
-
-typedef enum {
     TIMER_CHANNEL_1,
     TIMER_CHANNEL_2,
     TIMER_CHANNEL_3,
     TIMER_CHANNEL_4
 } Timer_Channel_t;
 
+typedef void (*Timer_Callback_t)(void);
+
 typedef struct {
-    Timer_Instance_t instance;
-    Timer_Mode_t mode;
-    Timer_ClockDivision_t clockDivision;
-    uint16_t prescaler;
-    uint32_t autoReloadValue;
+    Timer_Instance_t instance;      // Timer instance (TIMER_2, TIMER_3, TIMER_4, or TIMER_5)
+    Timer_Mode_t mode;              // Timer counting mode (up, down, or center-aligned)
+    uint16_t prescaler;             // Prescaler value (1 to 65535)
+    uint32_t autoReloadValue;       // Auto-reload value (1 to 0xFFFFFFFF)
+    Timer_Callback_t callback;      // Callback function for timer interrupts
 } Timer_t;
 
 STD_ReturnType Timer_Init(const Timer_t *timerConfig);
 STD_ReturnType Timer_Start(const Timer_t *timerConfig);
+STD_ReturnType Timer_Start_IT(const Timer_t *timerConfig);
+STD_ReturnType Timer_Stop_IT(const Timer_t *timerConfig);
 STD_ReturnType Timer_Stop(const Timer_t *timerConfig);
 STD_ReturnType Timer_GetCounter(const Timer_t *timerConfig, uint32_t* counterValue);
 STD_ReturnType Timer_SetAutoReload(const Timer_t *timerConfig);
 STD_ReturnType Timer_SetPrescaler(const Timer_t *timerConfig);
-STD_ReturnType Timer_SetClockDivision(const Timer_t *timerConfig);
 STD_ReturnType Timer_SetMode(const Timer_t *timerConfig);
 
 #endif // TIMER_H
