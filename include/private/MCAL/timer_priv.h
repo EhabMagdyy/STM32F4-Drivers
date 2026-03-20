@@ -21,11 +21,12 @@ typedef struct {
     volatile uint32_t CNT;   // Counter
     volatile uint32_t PSC;   // Prescaler
     volatile uint32_t ARR;   // Auto-Reload Register
+    volatile uint32_t reserved1;
     volatile uint32_t CCR1;  // Capture/Compare Register 1
     volatile uint32_t CCR2;  // Capture/Compare Register 2
     volatile uint32_t CCR3;  // Capture/Compare Register 3
     volatile uint32_t CCR4;  // Capture/Compare Register 4
-    volatile uint32_t reserved;
+    volatile uint32_t reserved2;
     volatile uint32_t DCR;   // DMA Control Register
     volatile uint32_t DMAR;  // DMA Address for Full Transfer
     volatile uint32_t OR;    // Option Register

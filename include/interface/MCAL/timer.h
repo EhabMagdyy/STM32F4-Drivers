@@ -8,6 +8,7 @@
 **/
 
 #include "../../../lib/STD_Types.h"
+#include "interface/MCAL/gpio.h"
 
 typedef enum {
     TIMER_2,    // TIM2 is a 32-bit timer
@@ -24,6 +25,14 @@ typedef enum {
     TIMER_MODE_CENTER_ALIGNED_3
 } Timer_Mode_t;
 
+// All Four Channels share:
+// - One counter (CNT)
+// - Prescaler (PSC)
+// - Auto-reload value (ARR)
+// They differ in:
+// - its own mode (Output Compare(PWM), Input Capture(input pwm)) which is configured through CCMR1 and CCMR2 registers
+// - Capture/Compare values (CCR1, CCR2, CCR3, CCR4)
+// - Interrupts for each channel (CC1IE, CC2IE, CC3IE, CC4IE)
 typedef enum {
     TIMER_CHANNEL_1,
     TIMER_CHANNEL_2,
@@ -38,12 +47,17 @@ typedef struct {
     Timer_Mode_t mode;              // Timer counting mode (up, down, or center-aligned)
     uint16_t prescaler;             // Prescaler value (1 to 65535)
     uint32_t autoReloadValue;       // Auto-reload value (1 to 0xFFFFFFFF)
+    Timer_Channel_t channel;        // Timer channel for Capture/Compare(PWM) operations not used in basic timer mode
     Timer_Callback_t callback;      // Callback function for timer interrupts
+    GPIO_Port_t port;               // GPIO port for Capture/Compare (not used in basic timer mode)
+    GPIO_Pin_t pin;                 // GPIO pin for Capture/Compare (not used in basic timer mode)
 } Timer_t;
 
 STD_ReturnType Timer_Init(const Timer_t *timerConfig);
 STD_ReturnType Timer_Start(const Timer_t *timerConfig);
 STD_ReturnType Timer_Start_IT(const Timer_t *timerConfig);
+STD_ReturnType Timer_Start_PWM(const Timer_t *timerConfig);
+STD_ReturnType Timer_PWM_SetDutyCycle(const Timer_t *timerConfig, uint8_t dutyCycle);
 STD_ReturnType Timer_Stop_IT(const Timer_t *timerConfig);
 STD_ReturnType Timer_Stop(const Timer_t *timerConfig);
 STD_ReturnType Timer_GetCounter(const Timer_t *timerConfig, uint32_t* counterValue);

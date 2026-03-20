@@ -3,6 +3,8 @@
 #include "interface/MCAL/rcc.h"
 #include "interface/Core/nvic.h"
 
+static STD_ReturnType Timer_ConfigureGPIO(const Timer_t *timerConfig);
+
 TIM_TypeDef* TIM[4] = {TIM2, TIM3, TIM4, TIM5};
 Timer_Callback_t Timer_Callbacks[4] = {NULL, NULL, NULL, NULL}; // Array to hold callbacks for each timer instance
 
@@ -75,6 +77,56 @@ STD_ReturnType Timer_Start_IT(const Timer_t *timerConfig){
         TIM[timerConfig->instance]->CR1 |= (1U << 0);
     }
 
+    return STD_SUCCESS;
+}
+
+STD_ReturnType Timer_Start_PWM(const Timer_t *timerConfig){
+    STD_ReturnType ret = STD_SUCCESS;
+    if(timerConfig == NULL){
+        ret = STD_ERROR;
+    }
+    else{
+        // Configure GPIO for PWM output
+        ret = Timer_ConfigureGPIO(timerConfig);
+        if(ret != STD_SUCCESS){
+            return ret;
+        }
+        // Configure channel as PWM output & Set preload & Set PWM mode
+        if(timerConfig->channel < TIMER_CHANNEL_3){
+            TIM[timerConfig->instance]->CCMR1 &= ~(1U << (timerConfig->channel * 8)); // Clear CCxS bit
+            TIM[timerConfig->instance]->CCMR1 |= (1U << (timerConfig->channel * 8 + 3)); // Set CCxPE bit
+            TIM[timerConfig->instance]->CCMR1 &= ~(0x7U << (timerConfig->channel * 8 + 4)); // Clear OCxM bits
+            TIM[timerConfig->instance]->CCMR1 |= (0x6U << (timerConfig->channel * 8 + 4)); // Set to PWM mode 1
+        }
+        else{
+            TIM[timerConfig->instance]->CCMR2 &= ~(1U << ((timerConfig->channel - 2) * 8)); // Clear CCxS bit
+            TIM[timerConfig->instance]->CCMR2 |= (1U << ((timerConfig->channel - 2) * 8 + 3)); // Set CCxPE bit
+            TIM[timerConfig->instance]->CCMR2 &= ~(0x7U << ((timerConfig->channel - 2) * 8 + 4)); // Clear OCxM bits
+            TIM[timerConfig->instance]->CCMR2 |= (0x6U << ((timerConfig->channel - 2) * 8 + 4)); // Set to PWM mode 1
+        }
+        // Enable the PWM Channel
+        TIM[timerConfig->instance]->CCER |= (1U << (timerConfig->channel * 4));
+        // Start the timer
+        TIM[timerConfig->instance]->CR1 |= (1U << 0);
+    }
+    return ret;
+
+}
+
+STD_ReturnType Timer_PWM_SetDutyCycle(const Timer_t *timerConfig, uint8_t dutyCycle){
+    if(timerConfig == NULL || dutyCycle > 100){
+        return STD_ERROR;
+    }
+    else{
+        uint32_t ccrValue = (TIM[timerConfig->instance]->ARR + 1) * dutyCycle / 100;
+        switch(timerConfig->channel){
+            case TIMER_CHANNEL_1: TIM[timerConfig->instance]->CCR1 = ccrValue; break;
+            case TIMER_CHANNEL_2: TIM[timerConfig->instance]->CCR2 = ccrValue; break;
+            case TIMER_CHANNEL_3: TIM[timerConfig->instance]->CCR3 = ccrValue; break;
+            case TIMER_CHANNEL_4: TIM[timerConfig->instance]->CCR4 = ccrValue; break;
+            default: return STD_ERROR;
+        }
+    }
     return STD_SUCCESS;
 }
 
@@ -182,21 +234,21 @@ void TIM_IRQ_Handler(Timer_Instance_t timerInstance){
     }
 }
 
-void TIM2_IRQHandler(void){
-    TIM_IRQ_Handler(TIMER_2);
+static STD_ReturnType Timer_ConfigureGPIO(const Timer_t *timerConfig){
+    GPIO_t pinConfig;
+    pinConfig.port = timerConfig->port;
+    pinConfig.pin = timerConfig->pin; 
+    pinConfig.mode = GPIO_MODE_AF;
+    pinConfig.outputType = GPIO_OUTPUT_PUSHPULL;
+    pinConfig.pullType = GPIO_NOPULL;
+    pinConfig.speed = GPIO_SPEED_HIGH;
+    pinConfig.altFunc = (timerConfig->instance == TIMER_2) ? 
+                            GPIO_AF1_TIM1_2 : GPIO_AF2_TIM3_4_5;
+
+    return GPIO_Init(&pinConfig);
 }
 
-
-void TIM3_IRQHandler(void){
-    TIM_IRQ_Handler(TIMER_3);
-}
-
-
-void TIM4_IRQHandler(void){
-    TIM_IRQ_Handler(TIMER_4);
-}
-
-
-void TIM5_IRQHandler(void){
-    TIM_IRQ_Handler(TIMER_5);
-}
+void TIM2_IRQHandler(void){ TIM_IRQ_Handler(TIMER_2); }
+void TIM3_IRQHandler(void){ TIM_IRQ_Handler(TIMER_3); }
+void TIM4_IRQHandler(void){ TIM_IRQ_Handler(TIMER_4); }
+void TIM5_IRQHandler(void){ TIM_IRQ_Handler(TIMER_5); }
