@@ -22,15 +22,23 @@ RCC_CFG_t rcc_pll = {
     .pllConfig.pll_cfg_max_t = { .pllMax = RCC_PLL_MAX }
 };
 
-// Timer_2 Channel 1 => PA0
+void Timer_IC_Callback(void){
+    LED_Toggle(LED_0);
+}
+
+// Timer_2 Channel 2 => PA1
 Timer_t timer2_config = {
     .instance = TIMER_2,
     .mode = TIMER_MODE_UP,
     .prescaler = 83, // 1 us tick       => 84 MHz / (83 + 1) = 1 MHz timer clock
     .autoReloadValue = 1000 - 1, // Auto-reload value => 1 MHz / 1000 = 1 kHz timer update frequency
-    .channel = TIMER_CHANNEL_1,
+    .channel = TIMER_CHANNEL_2,
     .port = GPIO_PORTA,
-    .pin = GPIO_PIN_0
+    .pin = GPIO_PIN_1,
+    .pullType = GPIO_PULLDOWN,
+    .icFilter = TIMER_IC_FILTER_CONSCUTIVE_4,
+    .icPolarity = TIMER_IC_POLARITY_RISING,
+    .ccCallback = Timer_IC_Callback
 };
 
 int main(){
@@ -41,23 +49,16 @@ int main(){
     }
 
     ret = SYSTICK_Init(SYSTICK_CLOCK_SOURCE_PLL_MAX);
-    //ret = LED_Init();
+    ret = LED_Init();
 
     ret = Timer_Init(&timer2_config);
-    ret = Timer_Start_PWM(&timer2_config);
+    ret = Timer_Start_IC(&timer2_config);
 
     // uint32_t counter = 0;
     *((uint32_t*)0xE0042008) |= 0xF; // Enable debug halt for TIMER2, TIMER3, TIMER4, and TIMER5
 
     while(1){
-        for(uint8_t duty = 0; duty <= 100; duty += 5){
-            Timer_PWM_SetDutyCycle(&timer2_config, duty);
-            SYSTICK_DelayMS(10);
-        }
-        for(uint8_t duty = 100; duty >= 10; duty -= 5){
-            Timer_PWM_SetDutyCycle(&timer2_config, duty);
-            SYSTICK_DelayMS(10);
-        }
+        // Just Connect a switch to PA1 and observe the LED toggling on pressed(PULL DOWN) or released(PULL UP)
     }
     
     return 0;
